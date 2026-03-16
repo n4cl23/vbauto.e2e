@@ -1,126 +1,154 @@
-README.md
 # VB Auto E2E
 
-Automação de testes end-to-end do sistema **VBConnection** utilizando Cypress.
+![Cypress Tests](https://github.com/n4cl23/vbauto.e2e/actions/workflows/cypress.yml/badge.svg)
 
-## 📌 Tecnologias
-
-- Cypress
-- JavaScript
-- Node.js
-- GitHub Actions (CI)
+Automação de testes **End-to-End (E2E)** do sistema **VBConnection** utilizando Cypress.
 
 ---
 
-## 🚀 Objetivo do projeto
+# 🚀 Objetivo
 
-Automatizar os fluxos críticos do sistema **VBConnection**, incluindo:
+Automatizar fluxos críticos do sistema VBConnection:
 
-- Login
-- Registro de contrato
-- Execução do fluxo para múltiplos DETRANs
-- Validação de navegação e comportamento da aplicação
+* Login
+* Registro de contrato
+* Execução para múltiplos DETRANs
+* Validação de navegação e comportamento da aplicação
 
 ---
 
-## 🌐 Ambiente de teste
-
+# 🌐 Ambiente de Teste
 
 https://hmg.vbconnection.info/
 
+---
+
+# 🧰 Stack Tecnológica
+
+| Tecnologia     | Uso                  |
+| -------------- | -------------------- |
+| Cypress        | Automação E2E        |
+| JavaScript     | Linguagem dos testes |
+| Node.js        | Runtime              |
+| GitHub Actions | Integração contínua  |
 
 ---
 
-## 📂 Estrutura do projeto
+# 📁 Estrutura do projeto
 
-
+```
 vbauto.e2e
 │
 ├─ cypress
-│ │
-│ ├─ actions
-│ │ └─ contratoActions.js
-│ │
-│ ├─ pages
-│ │ ├─ loginPage.js
-│ │ └─ contratoPage.js
-│ │
-│ ├─ fixtures
-│ │ ├─ loginData.json
-│ │ └─ detrans.json
-│ │
-│ ├─ e2e
-│ │ ├─ login.cy.js
-│ │ └─ contrato.cy.js
-│ │
-│ └─ support
-│ ├─ commands.js
-│ └─ e2e.js
+│  │
+│  ├─ actions
+│  │   └─ contratoActions.js
+│  │
+│  ├─ pages
+│  │   ├─ loginPage.js
+│  │   └─ contratoPage.js
+│  │
+│  ├─ fixtures
+│  │   ├─ loginData.json
+│  │   └─ detrans.json
+│  │
+│  ├─ e2e
+│  │   ├─ login.cy.js
+│  │   └─ contrato.cy.js
+│  │
+│  └─ support
+│      ├─ commands.js
+│      └─ e2e.js
 │
 ├─ cypress.config.js
 ├─ package.json
 └─ README.md
-
+```
 
 ---
 
-## ⚙️ Instalação
+# ⚙️ Instalação
 
 Clone o repositório:
 
 ```bash
 git clone https://github.com/n4cl23/vbauto.e2e.git
+```
 
-Entre na pasta do projeto:
+Entrar no diretório do projeto:
 
+```bash
 cd vbauto.e2e
+```
 
-Instale as dependências:
+Instalar dependências:
 
+```bash
 npm install
-▶️ Executar testes
+```
+
+---
+
+# ▶️ Executar testes
 
 Abrir interface do Cypress:
 
+```bash
 npx cypress open
+```
 
 Executar testes em modo headless:
 
+```bash
 npx cypress run
-🔐 Login automatizado
+```
 
-O projeto utiliza session caching do Cypress para evitar login repetido durante os testes.
+---
+
+# 🔐 Login automatizado
+
+O projeto utiliza **session caching** do Cypress para evitar múltiplos logins durante a execução da suíte.
 
 Fluxo:
 
+```
 Login
 ↓
 Sessão salva
 ↓
-Reutilização nos testes seguintes
+Reutilização da sessão nos testes
+```
 
-Isso melhora significativamente a performance da suíte.
+Isso reduz significativamente o tempo de execução.
 
-🧪 Estratégia de testes
+---
 
-Os testes são executados para múltiplos DETRANs.
+# 🧪 Estratégia de testes
+
+Os testes são executados para múltiplos **DETRANs**.
 
 Exemplo:
 
+```
 DETRAN-BA
 DETRAN-SP
 DETRAN-MG
 DETRAN-RJ
+DETRAN-RS
 ...
+```
 
-Cada DETRAN roda como um teste independente.
+Cada DETRAN executa como **teste independente**.
 
-⚡ Integração Contínua
+---
 
-O projeto utiliza GitHub Actions para execução automática dos testes.
+# ⚡ Integração Contínua
+
+O projeto utiliza **GitHub Actions** para execução automática dos testes.
 
 Pipeline executa:
 
+```
 Push no repositório
 ↓
 Instala dependências
@@ -128,29 +156,32 @@ Instala dependências
 Executa testes Cypress
 ↓
 Salva vídeos e screenshots
+```
 
-Resultados podem ser visualizados na aba:
+Resultados disponíveis na aba **Actions** do repositório.
 
-Actions
+---
 
-do repositório.
+# 📊 Evidências de teste
 
-📊 Evidências de teste
+Quando ocorre falha, o pipeline salva:
 
-Em caso de falha, o pipeline salva:
+* screenshots
+* vídeos da execução
 
-Screenshots
+Disponíveis como **Artifacts** no GitHub Actions.
 
-Vídeos da execução
+---
 
-Disponíveis como Artifacts no GitHub Actions.
+# 📈 Melhorias futuras
 
-📈 Melhorias futuras
+* Execução paralela dos testes
+* Relatórios de execução
+* Dashboard de qualidade
+* Ampliação da cobertura de testes
 
-Execução paralela dos testes
+---
 
-Relatórios de execução
+# 👨‍💻 Autor
 
-Integração com dashboards de QA
-
-Ampliação da cobertura de testes
+Projeto de automação E2E para o sistema VBConnection.
