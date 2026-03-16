@@ -1,11 +1,16 @@
-name: Cypress Tests
+name: Cypress E2E Tests
 
 on:
   push:
     branches:
       - main
 
+  pull_request:
+    branches:
+      - main
+
 jobs:
+
   cypress-run:
 
     runs-on: ubuntu-latest
@@ -19,9 +24,26 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run Cypress tests
-        run: npx cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          browser: chrome
+
+      - name: Upload screenshots (failures)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+
+      - name: Upload videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-videos
+          path: cypress/videos
