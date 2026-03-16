@@ -1,6 +1,9 @@
 # VB Auto E2E
 
-![Cypress Tests](https://github.com/n4cl23/vbauto.e2e/actions/workflows/cypress.yml/badge.svg)
+![CI](https://github.com/n4cl23/vbauto.e2e/actions/workflows/cypress.yml/badge.svg)
+![Node](https://img.shields.io/badge/node-22-green)
+![Cypress](https://img.shields.io/badge/tested%20with-Cypress-04C38E.svg)
+![License](https://img.shields.io/badge/license-MIT-blue)
 
 Automação de testes **End-to-End (E2E)** do sistema **VBConnection** utilizando Cypress.
 
@@ -8,29 +11,31 @@ Automação de testes **End-to-End (E2E)** do sistema **VBConnection** utilizand
 
 # 🚀 Objetivo
 
-Automatizar fluxos críticos do sistema VBConnection:
+Automatizar fluxos críticos da aplicação:
 
 * Login
 * Registro de contrato
-* Execução para múltiplos DETRANs
-* Validação de navegação e comportamento da aplicação
+* Execução do fluxo para múltiplos DETRANs
+* Validação de comportamento da aplicação
 
 ---
 
 # 🌐 Ambiente de Teste
 
+```
 https://hmg.vbconnection.info/
+```
 
 ---
 
-# 🧰 Stack Tecnológica
+# 🧰 Tecnologias
 
-| Tecnologia     | Uso                  |
-| -------------- | -------------------- |
-| Cypress        | Automação E2E        |
-| JavaScript     | Linguagem dos testes |
-| Node.js        | Runtime              |
-| GitHub Actions | Integração contínua  |
+| Tecnologia     | Uso                        |
+| -------------- | -------------------------- |
+| Cypress        | Automação E2E              |
+| JavaScript     | Desenvolvimento dos testes |
+| Node.js        | Runtime                    |
+| GitHub Actions | Integração contínua        |
 
 ---
 
@@ -71,19 +76,19 @@ vbauto.e2e
 
 Clone o repositório:
 
-```bash
+```
 git clone https://github.com/n4cl23/vbauto.e2e.git
 ```
 
-Entrar no diretório do projeto:
+Entrar no diretório:
 
-```bash
+```
 cd vbauto.e2e
 ```
 
 Instalar dependências:
 
-```bash
+```
 npm install
 ```
 
@@ -93,13 +98,13 @@ npm install
 
 Abrir interface do Cypress:
 
-```bash
+```
 npx cypress open
 ```
 
 Executar testes em modo headless:
 
-```bash
+```
 npx cypress run
 ```
 
@@ -107,27 +112,23 @@ npx cypress run
 
 # 🔐 Login automatizado
 
-O projeto utiliza **session caching** do Cypress para evitar múltiplos logins durante a execução da suíte.
+O projeto utiliza **session caching** do Cypress.
 
 Fluxo:
 
-```
 Login
 ↓
 Sessão salva
 ↓
 Reutilização da sessão nos testes
-```
 
-Isso reduz significativamente o tempo de execução.
+Isso evita múltiplos logins e reduz o tempo de execução.
 
 ---
 
 # 🧪 Estratégia de testes
 
-Os testes são executados para múltiplos **DETRANs**.
-
-Exemplo:
+Execução de fluxo para múltiplos DETRANs:
 
 ```
 DETRAN-BA
@@ -138,27 +139,25 @@ DETRAN-RS
 ...
 ```
 
-Cada DETRAN executa como **teste independente**.
+Cada DETRAN roda como **teste independente**.
 
 ---
 
 # ⚡ Integração Contínua
 
-O projeto utiliza **GitHub Actions** para execução automática dos testes.
+Pipeline automático utilizando GitHub Actions.
 
-Pipeline executa:
+Fluxo:
 
-```
 Push no repositório
 ↓
 Instala dependências
 ↓
 Executa testes Cypress
 ↓
-Salva vídeos e screenshots
-```
+Salva evidências (screenshots e vídeos)
 
-Resultados disponíveis na aba **Actions** do repositório.
+Os resultados podem ser visualizados na aba **Actions** do repositório.
 
 ---
 
@@ -167,21 +166,26 @@ Resultados disponíveis na aba **Actions** do repositório.
 Quando ocorre falha, o pipeline salva:
 
 * screenshots
-* vídeos da execução
+* vídeos de execução
 
-Disponíveis como **Artifacts** no GitHub Actions.
+Disponíveis nos **Artifacts** do pipeline.
 
 ---
 
 # 📈 Melhorias futuras
 
 * Execução paralela dos testes
-* Relatórios de execução
-* Dashboard de qualidade
+* Relatórios HTML
+* Dashboard de execução
 * Ampliação da cobertura de testes
 
 ---
 
-# 👨‍💻 Autor
+## 👨‍💻 Autor
 
-Projeto de automação E2E para o sistema VBConnection.
+**Janderson**
+
+QA Automation Engineer  
+Automação de testes E2E com Cypress
+
+GitHub: https://github.com/n4cl23
