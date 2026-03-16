@@ -1,0 +1,24 @@
+{
+  "name": "vbauto.e2e",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/n4cl23/vbauto.e2e.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/n4cl23/vbauto.e2e/issues"
+  },
+  "homepage": "https://github.com/n4cl23/vbauto.e2e#readme",
+  "devDependencies": {
+    "cypress": "^15.12.0"
+  }
+}

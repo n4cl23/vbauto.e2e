@@ -1,0 +1,23 @@
+{
+  "detrans": [
+    "DETRAN-AC",
+    "DETRAN-AP",
+    "DETRAN-BA",
+    "DETRAN-DF",
+    "DETRAN-ES",
+    "DETRAN-MG",
+    "DETRAN-MS",
+    "DETRAN-MT",
+    "DETRAN-PB",
+    "DETRAN-PE",
+    "DETRAN-PR",
+    "DETRAN-RJ",
+    "DETRAN-RN",
+    "DETRAN-RR",
+    "DETRAN-RS",
+    "DETRAN-SC",
+    "DETRAN-SE",
+    "DETRAN-SP",
+    "DETRAN-TO"
+  ]
+}
