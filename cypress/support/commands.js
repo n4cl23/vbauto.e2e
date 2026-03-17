@@ -1,14 +1,17 @@
-Cypress.Commands.add('login', (usuario, senha) => {
+Cypress.Commands.add('login', () => {
 
-    cy.session([usuario, senha], () => {
+    const usuario = Cypress.env('username')
+    const senha = Cypress.env('password')
+
+    cy.session(usuario, () => {
 
         cy.visit('/')
 
         cy.contains('Acessar').click()
 
-        cy.get('#username').type(usuario)
+        cy.get('#username').type(usuario, { log: false })
 
-        cy.get('#password').type(senha)
+        cy.get('#password').type(senha, { log: false })
 
         cy.get('button[type="submit"][form="loginForm"]').click()
 

@@ -4,11 +4,7 @@ import detrans from "../fixtures/detrans.json"
 describe('Registro de contrato por DETRAN', () => {
 
     beforeEach(() => {
-
-        cy.fixture('loginData').then((dados)=>{
-            cy.login(dados.usuario, dados.senha)
-        })
-
+        cy.login()
     })
 
     detrans.detrans.forEach((detran) => {

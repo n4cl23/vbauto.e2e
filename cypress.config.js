@@ -1,4 +1,5 @@
 const { defineConfig } = require("cypress");
+require('dotenv').config();
 
 module.exports = defineConfig({
 
@@ -15,9 +16,12 @@ module.exports = defineConfig({
   viewportHeight: 1080,
 
   e2e: {
-
     baseUrl: "https://hmg.vbconnection.info",
+  },
 
+  env: {
+    username: process.env.CYPRESS_USERNAME,
+    password: process.env.CYPRESS_PASSWORD
   }
 
 });

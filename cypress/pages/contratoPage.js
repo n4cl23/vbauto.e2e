@@ -24,29 +24,25 @@ class ContratoPage {
 
     }
 
-    selecionarAgenteFinanceiro(nomeBanco){
+    selecionarAgenteFinanceiro(nomeBanco) {
 
-    // 1. Abre o select
-    cy.get('nz-select[formcontrolname="agenteFinanceiro"]')
-      .click()
 
-    // 2. Garante que abriu
-    cy.get('.ant-select')
-      .should('have.class', 'ant-select-open')
+        cy.get('nz-select[formcontrolname="agenteFinanceiro"]')
+            .click()
 
-    // 3. Digita no input correto
-    cy.get('.ant-select-open .ant-select-selection-search-input')
-      .type(nomeBanco)
+        cy.get('.ant-select')
+            .should('have.class', 'ant-select-open')
 
-    // 4. Seleciona a opção
-    cy.contains('.ant-select-item-option', nomeBanco)
-      .click()
+        cy.get('.ant-select-open .ant-select-selection-search-input')
+            .type(nomeBanco)
 
-    // 5. Validação
-    cy.get('nz-select[formcontrolname="agenteFinanceiro"]')
-      .should('contain', nomeBanco)
+        cy.contains('.ant-select-item-option', nomeBanco)
+            .click()
 
-}
+        cy.get('nz-select[formcontrolname="agenteFinanceiro"]')
+            .should('contain', nomeBanco)
+
+    }
 
 
 }
