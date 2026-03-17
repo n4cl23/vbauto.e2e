@@ -1,56 +1,25 @@
 import contratoPage from "../pages/contratoPage"
 
-class ContratoActions {
+const AGENTE_FINANCEIRO = 'Banco Piloto'
 
-    acessarMenuRegistrar(){
-
-        contratoPage.btnRegistrar()
-            .should('be.visible')
-            .click()
-
-    }
-
-    acessarRegistroContratoAditivo(){
-
-        contratoPage.btnRegistroContratoAditivo()
-            .should('be.visible')
-            .click()
-
-    }
-
-    acessarRegistroContratoTela(){
-
-        contratoPage.btnRegistroContratoTela()
-            .should('be.visible')
-            .click()
-
-    }
-
-    selecionarDetran(detran){
-
-        contratoPage.selectDetran()
-            .click()
-
-        contratoPage.inputBuscaDetran()
-            .type(detran)
-
-        cy.contains('.ant-select-item-option', detran)
-            .click()
-
-    }
+export default {
 
     iniciarFluxoContrato(detran){
 
-        this.acessarMenuRegistrar()
+        contratoPage.acessarMenuRegistrar()
 
-        this.acessarRegistroContratoAditivo()
+        contratoPage.acessarRegistroContratoAditivo()
 
-        this.acessarRegistroContratoTela()
+        contratoPage.acessarRegistroContratoTela()
 
-        this.selecionarDetran(detran)
+        contratoPage.selecionarDetran(detran)
+
+        contratoPage.selecionarAgenteFinanceiro(AGENTE_FINANCEIRO)
+
+        // validação básica
+        cy.get('.ant-select-selection-item')
+          .should('contain', AGENTE_FINANCEIRO)
 
     }
 
 }
-
-export default new ContratoActions()

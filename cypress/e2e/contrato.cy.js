@@ -6,9 +6,7 @@ describe('Registro de contrato por DETRAN', () => {
     beforeEach(() => {
 
         cy.fixture('loginData').then((dados)=>{
-
             cy.login(dados.usuario, dados.senha)
-
         })
 
     })

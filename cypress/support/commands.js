@@ -4,7 +4,7 @@ Cypress.Commands.add('login', (usuario, senha) => {
 
         cy.visit('/')
 
-        cy.contains('button','Acessar').click()
+        cy.contains('Acessar').click()
 
         cy.get('#username').type(usuario)
 
