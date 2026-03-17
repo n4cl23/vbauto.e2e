@@ -118,7 +118,7 @@ Fluxo:
 
 Login
 ↓
-Sessão salva
+Sessão salva 
 ↓
 Reutilização da sessão nos testes
 
