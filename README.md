@@ -1,191 +1,205 @@
 # VB Auto E2E
 
+Automacao End-to-End do fluxo de registro de contratos do VB Auto, utilizando Cypress.
+
 ![CI](https://github.com/n4cl23/vbauto.e2e/actions/workflows/cypress.yml/badge.svg)
 ![Node](https://img.shields.io/badge/node-22-green)
 ![Cypress](https://img.shields.io/badge/tested%20with-Cypress-04C38E.svg)
-![License](https://img.shields.io/badge/license-MIT-blue)
 
-Automação de testes **End-to-End (E2E)** do sistema **VBConnection** utilizando Cypress.
+## Objetivo
 
----
+Este projeto valida os fluxos criticos de contrato do VB Auto:
 
-# 🚀 Objetivo
+- registro de contrato com veiculo novo;
+- registro de contrato com veiculo usado;
+- envio do contrato e geracao de protocolo;
+- regressao por DETRAN elegivel;
+- geracao de massa unica e coerente por UF;
+- cadastro com CNPJ alfanumerico.
 
-Automatizar fluxos críticos da aplicação:
+## Ambiente
 
-* Login
-* Registro de contrato
-* Execução do fluxo para múltiplos DETRANs
-* Validação de comportamento da aplicação
+Ambiente homologacao:
 
----
-
-# 🌐 Ambiente de Teste
-
-```
+```text
 https://hmg.vbconnection.info/
 ```
 
----
+As credenciais devem ser informadas por variaveis de ambiente no arquivo `.env`.
 
-# 🧰 Tecnologias
+## Stack
 
-| Tecnologia     | Uso                        |
-| -------------- | -------------------------- |
-| Cypress        | Automação E2E              |
-| JavaScript     | Desenvolvimento dos testes |
-| Node.js        | Runtime                    |
-| GitHub Actions | Integração contínua        |
+| Tecnologia | Uso |
+| --- | --- |
+| Cypress | Automacao E2E |
+| JavaScript | Implementacao dos testes |
+| Node.js | Runtime |
+| Mochawesome | Relatorios locais |
+| GitHub Actions | Integracao continua |
 
----
+## Estrutura
 
-# 📁 Estrutura do projeto
-
-```
-vbauto.e2e
-│
-├─ cypress
-│  │
-│  ├─ actions
-│  │   └─ contratoActions.js
-│  │
-│  ├─ pages
-│  │   ├─ loginPage.js
-│  │   └─ contratoPage.js
-│  │
-│  ├─ fixtures
-│  │   ├─ loginData.json
-│  │   └─ detrans.json
-│  │
-│  ├─ e2e
-│  │   ├─ login.cy.js
-│  │   └─ contrato.cy.js
-│  │
-│  └─ support
-│      ├─ commands.js
-│      └─ e2e.js
-│
-├─ cypress.config.js
-├─ package.json
-└─ README.md
+```text
+cypress/
+  actions/
+    contratoActions.js
+  e2e/
+    cadastro_cnpj_alfanumerico.cy.js
+    contrato/
+      contrato_novo.cy.js
+      contrato_usado.cy.js
+  fixtures/
+    detrans.json
+    detransIgnorados.json
+    veiculos/
+      novo.json
+      usado.json
+  pages/
+    contratoPage.js
+  support/
+    commands.js
+    e2e.js
+    massaDados.js
 ```
 
----
+## Suites Ativas
 
-# ⚙️ Instalação
+Somente as suites abaixo devem existir como specs executaveis:
 
-Clone o repositório:
+| Suite | Objetivo |
+| --- | --- |
+| `contrato/contrato_novo.cy.js` | Regressao multiestado para contrato de veiculo novo, com envio e protocolo |
+| `contrato/contrato_usado.cy.js` | Regressao multiestado para contrato de veiculo usado, com envio e protocolo |
+| `cadastro_cnpj_alfanumerico.cy.js` | Cadastro usando CNPJ alfanumerico unico |
 
+Specs antigos de login isolado, contrato generico e veiculo novo/usado foram removidos para evitar redundancia.
+
+## Regressao Multiestado
+
+Os specs de contrato percorrem os DETRANs configurados em `cypress/fixtures/detrans.json`, ignorando automaticamente os DETRANs listados em `cypress/fixtures/detransIgnorados.json`.
+
+Estados ignorados atualmente:
+
+| Motivo | DETRANs |
+| --- | --- |
+| WebPKI / certificado digital | `DETRAN-PR` |
+| Formulario indisponivel | `DETRAN-SE` |
+| Servico de registro nao contratado no HMG | `DETRAN-MS` |
+
+Para executar a regressao completa:
+
+```bash
+npm test
 ```
-git clone https://github.com/n4cl23/vbauto.e2e.git
+
+Para executar apenas os contratos:
+
+```bash
+npm run test:contrato
 ```
 
-Entrar no diretório:
+Para executar um smoke em um DETRAN especifico:
 
-```
-cd vbauto.e2e
+```bash
+npm test -- --env detran=DETRAN-DF
 ```
 
-Instalar dependências:
+## CNPJ Alfanumerico
 
+A suite `cadastro_cnpj_alfanumerico.cy.js` valida:
+
+- geracao de CNPJ alfanumerico unico por execucao;
+- preenchimento do campo CPF/CNPJ;
+- aceite do novo formato;
+- ausencia de erro indevido de mascara ou validacao;
+- envio do cadastro com sucesso;
+- geracao de protocolo.
+
+Executar somente esta suite:
+
+```bash
+npm run test:cadastro:cnpj
 ```
+
+## Massa de Dados
+
+A massa e gerada em `cypress/support/massaDados.js`.
+
+Caracteristicas:
+
+- dados unicos por execucao;
+- CPF valido para fluxos padrao;
+- CNPJ alfanumerico para a suite dedicada;
+- endereco coerente com a UF;
+- validacao de CEP por UF;
+- cidade, bairro, logradouro e estado configurados por UF;
+- retry controlado para evitar duplicidade;
+- logs claros com UF, tentativa e motivo de falha.
+
+## Otimizacao de Preenchimento
+
+O Page Object `contratoPage.js` evita preenchimento redundante:
+
+- nao limpa nem digita campos que ja possuem o valor esperado;
+- nao reprocessa selects ja preenchidos;
+- reduz waits fixos;
+- usa esperas baseadas no estado da tela quando possivel;
+- registra logs de massa e preenchimento para facilitar diagnostico.
+
+## Comandos
+
+Instalar dependencias:
+
+```bash
 npm install
 ```
 
----
+Abrir Cypress:
 
-# ▶️ Executar testes
-
-Abrir interface do Cypress:
-
-```
-npx cypress open
+```bash
+npm run test:open
 ```
 
-Executar testes em modo headless:
+Executar stack principal:
 
-```
-npx cypress run
-```
-
----
-
-# 🔐 Login automatizado
-
-O projeto utiliza **session caching** do Cypress.
-
-Fluxo:
-
-Login
-↓
-Sessão salva 
-↓
-Reutilização da sessão nos testes
-
-Isso evita múltiplos logins e reduz o tempo de execução.
-
----
-
-# 🧪 Estratégia de testes
-
-Execução de fluxo para múltiplos DETRANs:
-
-```
-DETRAN-BA
-DETRAN-SP
-DETRAN-MG
-DETRAN-RJ
-DETRAN-RS
-...
+```bash
+npm test
 ```
 
-Cada DETRAN roda como **teste independente**.
+Executar contratos:
 
----
+```bash
+npm run test:contrato
+```
 
-# ⚡ Integração Contínua
+Executar CNPJ alfanumerico:
 
-Pipeline automático utilizando GitHub Actions.
+```bash
+npm run test:cadastro:cnpj
+```
 
-Fluxo:
+## Relatorios e Evidencias
 
-Push no repositório
-↓
-Instala dependências
-↓
-Executa testes Cypress
-↓
-Salva evidências (screenshots e vídeos)
+Os relatorios locais do Mochawesome sao gerados em `cypress/reports` e nao devem ser versionados.
 
-Os resultados podem ser visualizados na aba **Actions** do repositório.
+Screenshots e videos de falha tambem ficam fora do versionamento, conforme `.gitignore`.
 
----
+## Manutencao
 
-# 📊 Evidências de teste
+Para adicionar um novo DETRAN elegivel:
 
-Quando ocorre falha, o pipeline salva:
+1. Incluir o DETRAN em `cypress/fixtures/detrans.json`.
+2. Garantir que a UF correspondente exista em `cypress/support/massaDados.js`.
+3. Rodar smoke com `npm test -- --env detran=DETRAN-UF`.
+4. Rodar a regressao completa antes de promover a alteracao.
 
-* screenshots
-* vídeos de execução
+Para ignorar temporariamente um DETRAN:
 
-Disponíveis nos **Artifacts** do pipeline.
+1. Incluir o DETRAN em `cypress/fixtures/detransIgnorados.json`.
+2. Informar o motivo na chave apropriada, por exemplo `webPki` ou `formularioIndisponivel`.
 
----
+## Autor
 
-# 📈 Melhorias futuras
+Janderson Santos
 
-* Execução paralela dos testes
-* Relatórios HTML
-* Dashboard de execução
-* Ampliação da cobertura de testes
-
----
-
-## 👨‍💻 Autor
-
-**Janderson**
-
-QA Automation Engineer  
-Automação de testes E2E com Cypress
-
-GitHub: https://github.com/n4cl23
+QA Automation Engineer
