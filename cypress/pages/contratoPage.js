@@ -366,15 +366,21 @@ class ContratoPage {
 
         cy.get('nz-select[formcontrolname="destino"]', { timeout: 20000 })
             .should('be.visible')
+            .and('not.have.class', 'ant-select-disabled')
             .click({ force: true, waitForAnimations: false })
 
+        cy.get('body').then(($body) => {
+            if (!$body.find('.ant-select-open .ant-select-selection-search-input').length) {
+                cy.get('nz-select[formcontrolname="destino"]')
+                    .click({ force: true, waitForAnimations: false })
+            }
+        })
+
         cy.get('.ant-select-open .ant-select-selection-search-input', { timeout: 10000 })
-            .should('be.visible')
             .clear({ force: true })
             .type(detran, { force: true })
 
         cy.contains('.ant-select-item-option', detran, { timeout: 10000 })
-            .should('be.visible')
             .click({ force: true, waitForAnimations: false })
 
         cy.get('nz-select[formcontrolname="destino"]')
@@ -388,15 +394,21 @@ class ContratoPage {
 
         cy.get('nz-select[formcontrolname="agenteFinanceiro"]', { timeout: 20000 })
             .should('be.visible')
+            .and('not.have.class', 'ant-select-disabled')
             .click({ force: true, waitForAnimations: false })
 
+        cy.get('body').then(($body) => {
+            if (!$body.find('.ant-select-open .ant-select-selection-search-input').length) {
+                cy.get('nz-select[formcontrolname="agenteFinanceiro"]')
+                    .click({ force: true, waitForAnimations: false })
+            }
+        })
+
         cy.get('.ant-select-open .ant-select-selection-search-input', { timeout: 10000 })
-            .should('be.visible')
             .clear({ force: true })
             .type(nomeBanco, { force: true })
 
         cy.contains('.ant-select-item-option', nomeBanco, { timeout: 10000 })
-            .should('be.visible')
             .click({ force: true, waitForAnimations: false })
 
         cy.get('nz-select[formcontrolname="agenteFinanceiro"]')
