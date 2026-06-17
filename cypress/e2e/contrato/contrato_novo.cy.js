@@ -39,7 +39,7 @@ describe('Contrato - Veiculo Novo', () => {
         it(`Registrar contrato NOVO para ${detran}`, () => {
             expect(detransIgnoradosNaSuite, `${detran} nao deve exigir WebPKI ou estar indisponivel`).not.to.include(detran)
 
-            cy.login(Cypress.env('username'), Cypress.env('password'))
+            cy.login({ escopoSessao: 'contratos', cacheAcrossSpecs: true })
             contratoPage.aguardarCarregamento()
 
             const veiculo = gerarVeiculoNovoPorUf(detran)

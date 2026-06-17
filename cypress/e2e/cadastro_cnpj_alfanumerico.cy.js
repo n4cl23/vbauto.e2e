@@ -10,7 +10,7 @@ describe('Cadastro com CNPJ alfanumerico', () => {
     const detransIgnoradosNaSuite = Object.values(detransIgnorados).flat()
 
     beforeEach(() => {
-        cy.login(Cypress.env('username'), Cypress.env('password'))
+        cy.login({ escopoSessao: 'cnpj-alfanumerico', cacheAcrossSpecs: false })
     })
 
     it('permite cadastrar contrato com CNPJ alfanumerico', () => {
