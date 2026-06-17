@@ -1,25 +1,32 @@
 import contratoActions from "../../actions/contratoActions"
+import contratoPage from "../../pages/contratoPage"
 import detrans from "../../fixtures/detrans.json"
-import usado from "../../fixtures/veiculos/usado.json"
+import detransIgnorados from "../../fixtures/detransIgnorados.json"
+import { gerarVeiculoUsadoPorUf, validarVeiculo } from "../../support/massaDados"
 
-describe('Contrato - Veículo Usado', () => {
+describe('Contrato - Veiculo Usado', () => {
+    const detranFiltro = Cypress.env('detran')
+    const detransIgnoradosNaSuite = Object.values(detransIgnorados).flat()
+    const detransElegiveis = detrans.detrans
+        .filter((detran) => !detransIgnoradosNaSuite.includes(detran))
+        .filter((detran) => !detranFiltro || detran === detranFiltro)
 
-    beforeEach(() => {
-        cy.login(Cypress.env('username'), Cypress.env('password'))
-    })
-
-    detrans.detrans.forEach((detran) => {
-
+    detransElegiveis.forEach((detran) => {
         it(`Registrar contrato USADO para ${detran}`, () => {
+            expect(detransIgnoradosNaSuite, `${detran} nao deve exigir WebPKI ou estar indisponivel`).not.to.include(detran)
 
-            cy.visit('/vbconnection/vbauto/home')
+            cy.login(Cypress.env('username'), Cypress.env('password'))
+            contratoPage.aguardarCarregamento()
+
+            const veiculo = gerarVeiculoUsadoPorUf(detran)
+            validarVeiculo(veiculo, 'usado')
 
             contratoActions.iniciarFluxoContrato(detran)
+            contratoActions.preencherDadosContrato(detran)
+            contratoActions.adicionarVeiculoUsado(veiculo, detran)
 
-            contratoActions.adicionarVeiculoUsado(usado)
-
+            contratoPage.assertBotaoSalvarHabilitado()
+            contratoActions.enviarContrato()
         })
-
     })
-
 })

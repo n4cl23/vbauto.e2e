@@ -1,0 +1,11 @@
+{
+  "webPki": [
+    "DETRAN-PR"
+  ],
+  "formularioIndisponivel": [
+    "DETRAN-SE"
+  ],
+  "servicoNaoContratado": [
+    "DETRAN-MS"
+  ]
+}
