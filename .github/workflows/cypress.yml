@@ -35,6 +35,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate HMG access and credentials
+        env:
+          CYPRESS_USERNAME: ${{ secrets.CYPRESS_USERNAME }}
+          CYPRESS_PASSWORD: ${{ secrets.CYPRESS_PASSWORD }}
+        run: |
+          if [ -z "$CYPRESS_USERNAME" ] || [ -z "$CYPRESS_PASSWORD" ]; then
+            echo "::error title=Missing Cypress secrets::Configure CYPRESS_USERNAME and CYPRESS_PASSWORD in repository secrets."
+            exit 1
+          fi
+
+          curl --fail --silent --show-error --location --max-time 30 \
+            https://hmg.vbconnection.info/vbconnection/login > /dev/null
+
       - name: Run Cypress tests
         uses: cypress-io/github-action@v6
         with:
@@ -49,6 +62,7 @@ jobs:
         with:
           name: cypress-screenshots
           path: cypress/screenshots
+          if-no-files-found: ignore
 
       - name: Upload videos
         if: always()
@@ -56,3 +70,4 @@ jobs:
         with:
           name: cypress-videos
           path: cypress/videos
+          if-no-files-found: ignore

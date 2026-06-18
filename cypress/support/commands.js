@@ -1,9 +1,18 @@
-Cypress.Commands.add('login', () => {
+Cypress.Commands.add('login', (usuarioOuOpcoes, senhaOuOpcoes, opcoesLogin = {}) => {
 
-    const usuario = Cypress.env('username')
-    const senha = Cypress.env('password')
+    const usuario = typeof usuarioOuOpcoes === 'string' ? usuarioOuOpcoes : Cypress.env('username')
+    const senha = typeof senhaOuOpcoes === 'string' ? senhaOuOpcoes : Cypress.env('password')
+    const opcoes = typeof usuarioOuOpcoes === 'object'
+        ? usuarioOuOpcoes
+        : (typeof senhaOuOpcoes === 'object' ? senhaOuOpcoes : opcoesLogin)
+    const escopoSessao = opcoes.escopoSessao || 'contratos'
+    const cacheAcrossSpecs = opcoes.cacheAcrossSpecs !== false
 
-    cy.session(usuario, () => {
+    if (!usuario || !senha) {
+        throw new Error('Credenciais Cypress ausentes. Configure CYPRESS_USERNAME e CYPRESS_PASSWORD.')
+    }
+
+    cy.session([usuario, escopoSessao], () => {
 
         cy.intercept({ resourceType: 'image' }, { statusCode: 204, body: '' })
         cy.intercept({ resourceType: 'font' }, { statusCode: 204, body: '' })
@@ -21,6 +30,7 @@ Cypress.Commands.add('login', () => {
         cy.location('pathname', { timeout: 60000 }).should('include', '/vbconnection/vbauto/home')
 
     }, {
+        cacheAcrossSpecs,
         validate() {
             cy.visit('/vbconnection/vbauto/home')
             cy.location('pathname', { timeout: 15000 }).should('include', '/vbconnection/vbauto/home')
