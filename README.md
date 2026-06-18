@@ -62,9 +62,9 @@ cypress/
     massaDados.js
 ```
 
-## Suites Ativas
+## Suites Ativas da Regressao
 
-Somente as suites abaixo devem existir como specs executaveis:
+As suites abaixo compoem a regressao principal executada por `npm test`:
 
 | Suite | Objetivo |
 | --- | --- |
@@ -73,6 +73,26 @@ Somente as suites abaixo devem existir como specs executaveis:
 | `cadastro_cnpj_alfanumerico.cy.js` | Cadastro usando CNPJ alfanumerico unico |
 
 Specs antigos de login isolado, contrato generico e veiculo novo/usado foram removidos para evitar redundancia.
+
+## Specs em Mapeamento
+
+Os specs abaixo ja existem como estrutura inicial, mas ficam fora do `npm test` ate a confirmacao UI dos caminhos, filtros e campos obrigatorios:
+
+| Suite | Objetivo |
+| --- | --- |
+| `contrato/alteracao_contrato.cy.js` | Alteracao de contrato registrado |
+| `contrato/registro_aditivo.cy.js` | Registro de aditivo a partir de contrato base |
+| `contrato/alteracao_aditivo.cy.js` | Alteracao de aditivo registrado |
+
+## Mapeamentos Tecnicos
+
+Os proximos fluxos de automacao estao documentados antes da implementacao dos specs:
+
+| Documento | Conteudo |
+| --- | --- |
+| `docs/MAPEAMENTO_FLUXOS_CONTRATO_ADITIVO.md` | Alteracao de contrato, registro de aditivo e alteracao de aditivo |
+
+Esses fluxos ainda dependem de confirmacao UI dos caminhos, filtros, campos editaveis/bloqueados e regras especificas por UF.
 
 ## Regressao Multiestado
 
@@ -176,6 +196,14 @@ Executar CNPJ alfanumerico:
 
 ```bash
 npm run test:cadastro:cnpj
+```
+
+Executar specs em mapeamento:
+
+```bash
+npm run test:alteracao:contrato
+npm run test:aditivo:registro
+npm run test:aditivo:alteracao
 ```
 
 ## Relatorios e Evidencias

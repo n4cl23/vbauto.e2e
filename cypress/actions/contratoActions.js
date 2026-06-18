@@ -1,5 +1,5 @@
 import contratoPage from "../pages/contratoPage"
-import { gerarPessoaPorUf, obterEnderecoPorUf, validarPessoa } from "../support/massaDados"
+import { gerarPessoaPorUf, gerarVeiculoNovoPorUf, obterEnderecoPorUf, validarPessoa } from "../support/massaDados"
 
 const AGENTE_FINANCEIRO = 'Banco Piloto'
 
@@ -71,6 +71,21 @@ class ContratoActions {
         }
     }
 
+    gerarDadosNovoAditivo(overrides = {}) {
+        const hoje = new Date()
+        const dataAditivo = hoje.toLocaleDateString('pt-BR')
+        const timestamp = Date.now().toString().slice(-10)
+        const randomico = Cypress._.random(100, 999)
+
+        return {
+            dataAditivo,
+            numeroAditivo: `AD${timestamp}${randomico}`,
+            numeroRegistro: `${timestamp}${randomico}`,
+            registroAditivoSircof: `${timestamp}`,
+            ...overrides
+        }
+    }
+
     iniciarFluxoContrato(detran) {
         contratoPage.acessarMenuRegistrar()
 
@@ -102,6 +117,125 @@ class ContratoActions {
         contratoPage.assertCamposObrigatoriosContratoPreenchidos(dadosContrato)
 
         return dadosContrato
+    }
+
+    registrarContratoNovoComProtocolo(detran, overrides = {}) {
+        const veiculo = gerarVeiculoNovoPorUf(detran)
+
+        this.iniciarFluxoContrato(detran)
+        const dadosContrato = this.preencherDadosContrato(detran, overrides)
+        this.adicionarVeiculoNovo(veiculo)
+
+        contratoPage.assertBotaoSalvarHabilitado()
+        return this.enviarContrato().then((protocolo) => {
+            return {
+                protocolo,
+                dadosContrato,
+                veiculo
+            }
+        })
+    }
+
+    alterarContratoComProtocolo(detran, overrides = {}) {
+        return this.registrarContratoNovoComProtocolo(detran).then(({ protocolo, dadosContrato, veiculo }) => {
+            expect(protocolo, 'protocolo do contrato original').to.match(/\d{4,}/)
+
+            contratoPage.abrirAlteracaoContrato(protocolo)
+            const dadosAlteracao = this.gerarDadosContrato(detran, overrides)
+
+            contratoPage.preencherDadosAlteracaoContrato(dadosAlteracao)
+
+            return contratoPage.enviarAlteracaoContrato().then((protocoloAlteracao) => {
+                return {
+                    protocoloContrato: protocolo,
+                    protocoloAlteracao,
+                    dadosContrato,
+                    dadosAlteracao,
+                    veiculo
+                }
+            })
+        })
+    }
+
+    iniciarFluxoNovoAditivo(detran) {
+        cy.visit('/vbconnection/vbauto/home')
+        contratoPage.aguardarCarregamento()
+
+        contratoPage.acessarMenuRegistrar()
+        contratoPage.acessarRegistroContratoAditivo()
+        contratoPage.acessarRegistroContratoTela()
+        contratoPage.selecionarDetran(detran)
+        contratoPage.selecionarAgenteFinanceiro(AGENTE_FINANCEIRO)
+        contratoPage.selecionarNovoAditivo()
+    }
+
+    preencherProtocoloNovoAditivo(protocolo) {
+        contratoPage.preencherProtocoloAditivo(protocolo)
+        contratoPage.assertContratoBaseAditivoCarregado(protocolo)
+        contratoPage.abrirFormularioNovoAditivo()
+    }
+
+    preencherDadosNovoAditivo(overrides = {}) {
+        const dadosAditivo = this.gerarDadosNovoAditivo(overrides)
+
+        contratoPage.preencherDadosNovoAditivo(dadosAditivo)
+        contratoPage.assertDadosNovoAditivoPreenchidos(dadosAditivo)
+
+        return dadosAditivo
+    }
+
+    enviarNovoAditivo() {
+        return contratoPage.enviarNovoAditivo()
+    }
+
+    registrarAditivoComProtocolo(detran, overridesAditivo = {}) {
+        return this.registrarContratoNovoComProtocolo(detran).then(({ protocolo, dadosContrato, veiculo }) => {
+            expect(protocolo, 'protocolo do contrato base').to.match(/\d{4,}/)
+
+            this.iniciarFluxoNovoAditivo(detran)
+            this.preencherProtocoloNovoAditivo(protocolo)
+            const dadosAditivo = this.preencherDadosNovoAditivo(overridesAditivo)
+
+            return this.enviarNovoAditivo().then((protocoloAditivo) => {
+                return {
+                    protocoloContrato: protocolo,
+                    protocoloAditivo,
+                    dadosContrato,
+                    dadosAditivo,
+                    veiculo
+                }
+            })
+        })
+    }
+
+    abrirAditivoExistenteParaAlteracao() {
+        return contratoPage.abrirPrimeiroAditivoElegivelParaAlteracao()
+    }
+
+    alterarAditivoAtual(protocoloAditivo, overrides = {}, detran = null) {
+        const dadosAlteracao = this.gerarDadosNovoAditivo(overrides)
+
+        if (protocoloAditivo) {
+            contratoPage.abrirAlteracaoAditivo(protocoloAditivo)
+        }
+
+        if (detran) {
+            contratoPage.preencherDestinoAgenteAditivoSeNecessario(detran, AGENTE_FINANCEIRO)
+        }
+
+        contratoPage.preencherDadosAlteracaoAditivo(dadosAlteracao)
+        contratoPage.assertDadosAlteracaoAditivoPreenchidos(dadosAlteracao)
+
+        return contratoPage.enviarAlteracaoAditivo().then((protocoloAlteracao) => {
+            return {
+                protocoloAlteracao,
+                dadosAlteracao
+            }
+        })
+    }
+
+    validarTipoAditivoPersistido(protocoloAditivo) {
+        contratoPage.validarTipoAditivoPersistido(protocoloAditivo)
     }
 
     adicionarVeiculoNovo(dados) {
@@ -153,7 +287,7 @@ class ContratoActions {
     }
 
     enviarContrato() {
-        contratoPage.enviarContrato()
+        return contratoPage.enviarContrato()
     }
 
     // =========================
