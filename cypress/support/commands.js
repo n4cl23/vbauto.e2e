@@ -7,12 +7,13 @@ Cypress.Commands.add('login', (usuarioOuOpcoes, senhaOuOpcoes, opcoesLogin = {})
         : (typeof senhaOuOpcoes === 'object' ? senhaOuOpcoes : opcoesLogin)
     const escopoSessao = opcoes.escopoSessao || 'contratos'
     const cacheAcrossSpecs = opcoes.cacheAcrossSpecs !== false
+    const usarSessao = opcoes.usarSessao !== false
 
     if (!usuario || !senha) {
         throw new Error('Credenciais Cypress ausentes. Configure CYPRESS_USERNAME e CYPRESS_PASSWORD.')
     }
 
-    cy.session([usuario, escopoSessao], () => {
+    const executarLoginPelaUi = () => {
 
         cy.intercept({ resourceType: 'image' }, { statusCode: 204, body: '' })
         cy.intercept({ resourceType: 'font' }, { statusCode: 204, body: '' })
@@ -28,14 +29,19 @@ Cypress.Commands.add('login', (usuarioOuOpcoes, senhaOuOpcoes, opcoesLogin = {})
         cy.get('button[type="submit"][form="loginForm"]').click({ force: true, waitForAnimations: false })
 
         cy.location('pathname', { timeout: 60000 }).should('include', '/vbconnection/vbauto/home')
+    }
 
-    }, {
-        cacheAcrossSpecs,
-        validate() {
-            cy.visit('/vbconnection/vbauto/home')
-            cy.location('pathname', { timeout: 15000 }).should('include', '/vbconnection/vbauto/home')
-        }
-    })
+    if (!usarSessao) {
+        executarLoginPelaUi()
+    } else {
+        cy.session([usuario, escopoSessao], executarLoginPelaUi, {
+            cacheAcrossSpecs,
+            validate() {
+                cy.visit('/vbconnection/vbauto/home')
+                cy.location('pathname', { timeout: 15000 }).should('include', '/vbconnection/vbauto/home')
+            }
+        })
+    }
 
     cy.visit('/vbconnection/vbauto/home')
     cy.location('pathname', { timeout: 15000 }).should('include', '/vbconnection/vbauto/home')

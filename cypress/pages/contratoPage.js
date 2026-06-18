@@ -98,52 +98,56 @@ class ContratoPage {
             })
 
             this.aguardarCarregamento()
-            cy.get('body').then(($bodyAfterFirstSearch) => {
-                const opcoes = $bodyAfterFirstSearch.find('.cdk-overlay-pane .ant-select-item-option:visible')
-                const textoSemAcento = this.normalizarTexto(textoOpcao)
-                const inputBusca = $bodyAfterFirstSearch.find('.ant-select-open .ant-select-selection-search-input')
-
-                if (!opcoes.length && inputBusca.length && textoSemAcento !== textoOpcao) {
-                    cy.wrap(inputBusca.first()).clear({ force: true }).type(textoSemAcento, { force: true })
-                }
-            })
-
-            this.aguardarCarregamento()
-            cy.get('body').then(($bodyAfterSearch) => {
-                const opcoes = $bodyAfterSearch.find('.cdk-overlay-pane .ant-select-item-option:visible')
-
-                if (!opcoes.length) {
-                    const inputBusca = $bodyAfterSearch.find('.ant-select-open .ant-select-selection-search-input')
-
-                    if (inputBusca.length) {
-                        cy.wrap(inputBusca.first()).clear({ force: true })
-                    }
-                }
-            })
-
-            this.aguardarCarregamento()
-            cy.get('body').then(($bodyAfterClear) => {
-                const opcoes = $bodyAfterClear.find('.cdk-overlay-pane .ant-select-item-option:visible')
-
-                if (!opcoes.length) {
-                    cy.get('body').type('{esc}', { force: true })
-                    return
-                }
-
-                cy.wrap(opcoes)
-                    .should('exist')
-                    .then(($opcoes) => {
-                        const textoSemAcento = this.normalizarTexto(textoOpcao)
-                        const opcaoExata = [...$opcoes].find((opcao) => {
-                            return opcao.innerText.includes(textoOpcao) ||
-                                this.normalizarTexto(opcao.innerText).includes(textoSemAcento)
-                        })
-                        cy.wrap(opcaoExata || $opcoes[0]).click({ force: true, waitForAnimations: false })
-                    })
-            })
+            this.rebuscarSelectSemAcento(textoOpcao)
+            this.selecionarOpcaoAberta(textoOpcao, selectors)
 
             return cy.wrap(true, { log: false })
         })
+    }
+
+    rebuscarSelectSemAcento(textoOpcao) {
+        const textoSemAcento = this.normalizarTexto(textoOpcao)
+
+        if (!textoOpcao || textoSemAcento === textoOpcao) {
+            return
+        }
+
+        cy.get('body').then(($body) => {
+            const inputBusca = $body.find('.ant-select-open .ant-select-selection-search-input')
+            const opcoes = $body.find('.cdk-overlay-pane .ant-select-item-option:not(.ant-select-item-option-disabled)')
+            const semDados = this.normalizarTexto($body.text()).includes('Nao ha dados')
+
+            if (inputBusca.length && (!opcoes.length || semDados)) {
+                cy.wrap(inputBusca.first()).clear({ force: true }).type(textoSemAcento, { force: true })
+                this.aguardarCarregamento()
+            }
+        })
+    }
+
+    selecionarOpcaoAberta(textoOpcao, contexto = 'select') {
+        cy.get('.cdk-overlay-pane .ant-select-item-option:not(.ant-select-item-option-disabled)', { timeout: 20000 })
+            .then(($opcoes) => {
+                const opcoesVisiveis = [...$opcoes].filter((opcao) => Cypress.$(opcao).is(':visible'))
+                const opcoes = opcoesVisiveis.length ? opcoesVisiveis : [...$opcoes]
+                const textoSemAcento = this.normalizarTexto(textoOpcao)
+                const textoComparavel = textoSemAcento.toLowerCase()
+                const opcaoExata = opcoes.find((opcao) => {
+                    const opcaoComparavel = this.normalizarTexto(opcao.innerText).toLowerCase()
+                    return opcao.innerText.toLowerCase().includes(String(textoOpcao).toLowerCase()) ||
+                        opcaoComparavel.includes(textoComparavel)
+                })
+
+                if (!opcoes.length) {
+                    throw new Error(`[massa] ${contexto}: select sem opcoes disponiveis`)
+                }
+
+                if (!opcaoExata && textoOpcao) {
+                    const opcoesDisponiveis = opcoes.map((opcao) => this.normalizarValorCampo(opcao.innerText)).join(', ')
+                    throw new Error(`[massa] ${contexto}: opcao "${textoOpcao}" nao encontrada. Opcoes: ${opcoesDisponiveis}`)
+                }
+
+                cy.wrap(opcaoExata || opcoes[0]).click({ force: true, waitForAnimations: false })
+            })
     }
 
     selecionarSelectPorIndiceSeExistir(selectors, indice, textoOpcao) {
@@ -170,47 +174,8 @@ class ContratoPage {
             })
 
             this.aguardarCarregamento()
-            cy.get('body').then(($bodyAfterFirstSearch) => {
-                const opcoes = $bodyAfterFirstSearch.find('.cdk-overlay-pane .ant-select-item-option:visible')
-                const textoSemAcento = this.normalizarTexto(textoOpcao)
-                const inputBusca = $bodyAfterFirstSearch.find('.ant-select-open .ant-select-selection-search-input')
-
-                if (!opcoes.length && inputBusca.length && textoSemAcento !== textoOpcao) {
-                    cy.wrap(inputBusca.first()).clear({ force: true }).type(textoSemAcento, { force: true })
-                }
-            })
-
-            this.aguardarCarregamento()
-            cy.get('body').then(($bodyAfterSearch) => {
-                const opcoes = $bodyAfterSearch.find('.cdk-overlay-pane .ant-select-item-option:visible')
-
-                if (!opcoes.length) {
-                    const inputBusca = $bodyAfterSearch.find('.ant-select-open .ant-select-selection-search-input')
-
-                    if (inputBusca.length) {
-                        cy.wrap(inputBusca.first()).clear({ force: true })
-                    }
-                }
-            })
-
-            this.aguardarCarregamento()
-            cy.get('body').then(($bodyAfterClear) => {
-                const opcoes = $bodyAfterClear.find('.cdk-overlay-pane .ant-select-item-option:visible')
-
-                if (!opcoes.length) {
-                    cy.get('body').type('{esc}', { force: true })
-                    return
-                }
-
-                cy.wrap(opcoes).then(($opcoes) => {
-                    const textoSemAcento = this.normalizarTexto(textoOpcao)
-                    const opcaoExata = [...$opcoes].find((opcao) => {
-                        return opcao.innerText.includes(textoOpcao) ||
-                            this.normalizarTexto(opcao.innerText).includes(textoSemAcento)
-                    })
-                    cy.wrap(opcaoExata || $opcoes[0]).click({ force: true, waitForAnimations: false })
-                })
-            })
+            this.rebuscarSelectSemAcento(textoOpcao)
+            this.selecionarOpcaoAberta(textoOpcao, selectors)
 
             return cy.wrap(true, { log: false })
         })
@@ -235,11 +200,8 @@ class ContratoPage {
                     }
                 })
 
-                cy.get('.cdk-overlay-pane .ant-select-item-option:visible', { timeout: 5000 })
-                    .then(($opcoes) => {
-                        const opcaoExata = [...$opcoes].find((opcao) => opcao.innerText.includes(textoOpcao))
-                        cy.wrap(opcaoExata || $opcoes[0]).click({ force: true, waitForAnimations: false })
-                    })
+                this.rebuscarSelectSemAcento(textoOpcao)
+                this.selecionarOpcaoAberta(textoOpcao, selectors)
             })
         })
     }
@@ -270,19 +232,8 @@ class ContratoPage {
                 }
             })
 
-            cy.get('body').then(($bodyAfterSearch) => {
-                const opcoes = $bodyAfterSearch.find('.cdk-overlay-pane .ant-select-item-option:visible')
-
-                if (!opcoes.length) {
-                    cy.get('body').type('{esc}', { force: true })
-                    return
-                }
-
-                cy.wrap(opcoes).then(($opcoes) => {
-                    const opcaoExata = [...$opcoes].find((opcao) => opcao.innerText.includes(textoOpcao))
-                    cy.wrap(opcaoExata || $opcoes[0]).click({ force: true, waitForAnimations: false })
-                })
-            })
+            this.rebuscarSelectSemAcento(textoOpcao)
+            this.selecionarOpcaoAberta(textoOpcao, `select ${rotulo}`)
 
             return cy.wrap(true, { log: false })
         })
@@ -299,9 +250,17 @@ class ContratoPage {
             cy.wrap(selectsInvalidos).each(($select) => {
                 cy.wrap($select).click({ force: true, waitForAnimations: false })
 
-                cy.get('.cdk-overlay-pane .ant-select-item-option:visible', { timeout: 5000 })
-                    .first()
-                    .click({ force: true, waitForAnimations: false })
+                cy.get('body').then(($bodyAfterClick) => {
+                    const opcoes = $bodyAfterClick.find('.cdk-overlay-pane .ant-select-item-option:visible')
+
+                    if (!opcoes.length) {
+                        cy.log('[massa] select obrigatorio sem opcoes disponiveis para fallback')
+                        cy.get('body').type('{esc}', { force: true })
+                        return
+                    }
+
+                    cy.wrap(opcoes.first()).click({ force: true, waitForAnimations: false })
+                })
             })
         })
     }
@@ -354,11 +313,20 @@ class ContratoPage {
         cy.get('app-menu-card-icon')
             .should('have.length.at.least', 2)
 
-        cy.contains(/Registro de Contrato por Tela/i)
+        cy.contains('app-menu-card-icon', /Registro de Contrato por Tela/i)
             .should('be.visible')
             .click({ force: true, waitForAnimations: false })
 
         this.aguardarCarregamento()
+
+        cy.get('body').then(($body) => {
+            if (!$body.find('nz-select[formcontrolname="destino"]').length) {
+                cy.contains('app-menu-card-icon', /Registro de Contrato por Tela/i)
+                    .click({ force: true, waitForAnimations: false })
+
+                this.aguardarCarregamento()
+            }
+        })
     }
 
     selecionarDetran(detran) {
@@ -380,8 +348,7 @@ class ContratoPage {
             .clear({ force: true })
             .type(detran, { force: true })
 
-        cy.contains('.ant-select-item-option', detran, { timeout: 10000 })
-            .click({ force: true, waitForAnimations: false })
+        this.selecionarOpcaoAberta(detran, 'DETRAN')
 
         cy.get('nz-select[formcontrolname="destino"]')
             .should('contain', detran)
@@ -564,6 +531,17 @@ class ContratoPage {
             dados.cidade
         )
 
+        this.selecionarSelectSeExistir(
+            'nz-select[nzplaceholder="UF do local de pagamento"], nz-select[formcontrolname="ufLocalPagamento"]',
+            dados.uf
+        )
+        this.aguardarCarregamento()
+
+        this.selecionarSelectSeExistir(
+            'nz-select[nzplaceholder="Cidade do local de pagamento"], nz-select[formcontrolname="cidadeLocalPagamento"]',
+            dados.cidade
+        )
+
         this.preencherDadosPessoa('Devedor', dados.devedor)
         this.preencherDadosPessoa('Credor', dados.credor)
         this.preencherSelectsObrigatoriosPendentes()
@@ -667,7 +645,7 @@ class ContratoPage {
             dados.estado
         )
         this.selecionarSelectPorIndiceSeExistir(
-            'nz-select[nzplaceholder="UF"], nz-select[formcontrolname="uf"]',
+            'nz-select[nzplaceholder="UF"]',
             indicePessoa,
             dados.estado
         )
@@ -677,7 +655,7 @@ class ContratoPage {
             dados.cidade
         )
         this.selecionarSelectPorIndiceSeExistir(
-            'nz-select[nzplaceholder="Cidade"], nz-select[formcontrolname="cidade"]',
+            'nz-select[nzplaceholder="Cidade"]',
             indicePessoa,
             dados.cidade
         )
