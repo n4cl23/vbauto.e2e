@@ -74,6 +74,48 @@ class ContratoPage {
         })
     }
 
+    preencherInputHabilitadoSeExistir(selectors, valor) {
+        return cy.get('body').then(($body) => {
+            const campo = $body.find(selectors).filter(':visible').first()
+
+            if (!campo.length) {
+                return false
+            }
+
+            if (campo.is(':disabled') || campo.attr('readonly')) {
+                cy.log(`[massa] input desabilitado, mantendo valor atual: ${selectors}`)
+                return cy.wrap(false, { log: false })
+            }
+
+            this.preencherCampoSeNecessario(campo, valor, selectors)
+            return cy.wrap(true, { log: false })
+        })
+    }
+
+    preencherInputPorRotuloSeHabilitado(rotulo, valor) {
+        return cy.get('body').then(($body) => {
+            const rotuloNormalizado = this.normalizarTexto(rotulo).toLowerCase()
+            const item = $body.find('.ant-form-item, nz-form-item').filter((_, elemento) => {
+                return this.normalizarTexto(elemento.innerText).toLowerCase().includes(rotuloNormalizado) &&
+                    Cypress.$(elemento).find('input:visible').length
+            }).first()
+
+            if (!item.length) {
+                return false
+            }
+
+            const campo = item.find('input:visible').first()
+
+            if (campo.is(':disabled') || campo.attr('readonly')) {
+                cy.log(`[massa] input ${rotulo} desabilitado, mantendo valor atual`)
+                return cy.wrap(false, { log: false })
+            }
+
+            this.preencherCampoSeNecessario(campo, valor, rotulo)
+            return cy.wrap(true, { log: false })
+        })
+    }
+
     selecionarSelectSeExistir(selectors, textoOpcao) {
         return cy.get('body').then(($body) => {
             const select = $body.find(selectors).filter(':visible').first()
@@ -133,6 +175,10 @@ class ContratoPage {
                 const textoComparavel = textoSemAcento.toLowerCase()
                 const opcaoExata = opcoes.find((opcao) => {
                     const opcaoComparavel = this.normalizarTexto(opcao.innerText).toLowerCase()
+                    return this.normalizarValorCampo(opcaoComparavel) === this.normalizarValorCampo(textoComparavel)
+                })
+                const opcaoParcial = opcoes.find((opcao) => {
+                    const opcaoComparavel = this.normalizarTexto(opcao.innerText).toLowerCase()
                     return opcao.innerText.toLowerCase().includes(String(textoOpcao).toLowerCase()) ||
                         opcaoComparavel.includes(textoComparavel)
                 })
@@ -141,12 +187,12 @@ class ContratoPage {
                     throw new Error(`[massa] ${contexto}: select sem opcoes disponiveis`)
                 }
 
-                if (!opcaoExata && textoOpcao) {
+                if (!opcaoExata && !opcaoParcial && textoOpcao) {
                     const opcoesDisponiveis = opcoes.map((opcao) => this.normalizarValorCampo(opcao.innerText)).join(', ')
                     throw new Error(`[massa] ${contexto}: opcao "${textoOpcao}" nao encontrada. Opcoes: ${opcoesDisponiveis}`)
                 }
 
-                cy.wrap(opcaoExata || opcoes[0]).click({ force: true, waitForAnimations: false })
+                cy.wrap(opcaoExata || opcaoParcial || opcoes[0]).click({ force: true, waitForAnimations: false })
             })
     }
 
@@ -239,6 +285,128 @@ class ContratoPage {
         })
     }
 
+    selecionarPrimeiraOpcaoSelectSeExistir(selectors, contexto = 'select') {
+        return cy.get('body').then(($body) => {
+            const select = $body.find(selectors).filter(':visible').first()
+
+            if (!select.length) {
+                return false
+            }
+
+            if (select.hasClass('ant-select-disabled')) {
+                cy.log(`[massa] ${contexto} desabilitado, mantendo valor atual`)
+                return cy.wrap(false, { log: false })
+            }
+
+            cy.wrap(select).click({ force: true, waitForAnimations: false })
+            this.selecionarOpcaoAberta(null, contexto)
+            return cy.wrap(true, { log: false })
+        })
+    }
+
+    selecionarPrimeiraOpcaoSelectPorRotuloSeExistir(rotulo) {
+        return cy.get('body').then(($body) => {
+            const rotuloNormalizado = this.normalizarTexto(rotulo).toLowerCase()
+            const item = $body.find('.ant-form-item, nz-form-item').filter((_, elemento) => {
+                return this.normalizarTexto(elemento.innerText).toLowerCase().includes(rotuloNormalizado) &&
+                    Cypress.$(elemento).find('nz-select:visible').length
+            }).first()
+
+            if (!item.length) {
+                return false
+            }
+
+            const select = item.find('nz-select:visible').first()
+
+            if (select.hasClass('ant-select-disabled')) {
+                cy.log(`[massa] select ${rotulo} desabilitado, mantendo valor atual`)
+                return cy.wrap(false, { log: false })
+            }
+
+            cy.wrap(select).click({ force: true, waitForAnimations: false })
+            this.selecionarOpcaoAberta(null, rotulo)
+            return cy.wrap(true, { log: false })
+        })
+    }
+
+    selecionarTipoAditivoObrigatorio() {
+        cy.get('body').then(($body) => {
+            const select = this.localizarSelectPorRotulo($body, 'Tipo de Aditivo')
+
+            expect(select, 'select Tipo de Aditivo').to.have.length(1)
+
+            if (select.hasClass('ant-select-disabled')) {
+                throw new Error('[aditivo] Tipo de Aditivo esta desabilitado e nao pode ser preenchido')
+            }
+
+            cy.wrap(select).click({ force: true, waitForAnimations: false })
+        })
+
+        cy.get('.cdk-overlay-pane .ant-select-item-option:not(.ant-select-item-option-disabled)', { timeout: 20000 })
+            .then(($opcoes) => {
+                const opcoesValidas = [...$opcoes].filter((opcao) => {
+                    const texto = this.normalizarTexto(opcao.innerText).replace(/\s+/g, ' ').trim()
+                    return texto &&
+                        !/Tipo de Aditivo|Selecione|Nao ha dados/i.test(texto)
+                })
+
+                expect(
+                    opcoesValidas.map((opcao) => this.normalizarValorCampo(opcao.innerText)).join(', '),
+                    'opcoes validas para Tipo de Aditivo'
+                ).not.to.eq('')
+
+                cy.wrap(opcoesValidas[0]).click({ force: true, waitForAnimations: false })
+            })
+
+        this.aguardarCarregamento()
+        this.assertTipoAditivoPreenchido()
+    }
+
+    localizarSelectPorRotulo($body, rotulo) {
+        if (this.normalizarTexto(rotulo).toLowerCase() === 'tipo de aditivo') {
+            const selectTipoAditivo = $body.find(
+                'nz-select[nzplaceholder="Tipo de Aditivo"], nz-select[formcontrolname="tipoAditivo"], nz-select[formcontrolname="tipoAditivoId"]'
+            ).filter(':visible').first()
+
+            if (selectTipoAditivo.length) {
+                return selectTipoAditivo
+            }
+
+            const secaoAditivo = $body.find('#aditivoForm section').filter((_, section) => {
+                const texto = this.normalizarTexto(section.innerText)
+                return /Aditivo/i.test(texto) && /Tipo de Aditivo/i.test(texto)
+            }).first()
+
+            const primeiroSelectAditivo = secaoAditivo.find('nz-select:visible, .ant-select:visible').first()
+
+            if (primeiroSelectAditivo.length) {
+                return primeiroSelectAditivo
+            }
+        }
+
+        const rotuloNormalizado = this.normalizarTexto(rotulo).toLowerCase()
+        const item = $body.find('.ant-form-item, nz-form-item').filter((_, elemento) => {
+            return this.normalizarTexto(elemento.innerText).toLowerCase().includes(rotuloNormalizado) &&
+                Cypress.$(elemento).find('nz-select:visible').length
+        }).first()
+
+        return item.find('nz-select:visible').first()
+    }
+
+    assertTipoAditivoPreenchido() {
+        cy.get('body', { timeout: 20000 }).then(($body) => {
+            const select = this.localizarSelectPorRotulo($body, 'Tipo de Aditivo')
+            const selectionItem = select.find('.ant-select-selection-item').first()
+            const valor = this.normalizarTexto(
+                selectionItem.attr('title') || selectionItem.text() || select.text()
+            ).replace(/\s+/g, ' ').trim()
+
+            expect(select, 'select Tipo de Aditivo').to.have.length(1)
+            expect(valor, 'Tipo de Aditivo preenchido').to.not.eq('')
+            expect(valor, 'Tipo de Aditivo nao deve permanecer no placeholder').not.to.match(/Tipo de Aditivo|Selecione/i)
+        })
+    }
+
     preencherSelectsObrigatoriosPendentes() {
         cy.get('body').then(($body) => {
             const selectsInvalidos = $body.find('#contratoForm nz-select.ng-invalid:visible')
@@ -265,12 +433,16 @@ class ContratoPage {
         })
     }
 
-    aguardarCarregamento() {
+    aguardarCarregamento(tentativasRestantes = 20) {
         cy.get('body', { timeout: 20000 }).should('exist').then(($body) => {
             const carregando = $body.find('.loader:visible, .ant-spin-spinning:visible').length
 
             if (carregando) {
                 cy.wait(500, { log: false })
+
+                if (tentativasRestantes > 1) {
+                    this.aguardarCarregamento(tentativasRestantes - 1)
+                }
             }
         })
     }
@@ -326,6 +498,683 @@ class ContratoPage {
 
                 this.aguardarCarregamento()
             }
+        })
+    }
+
+    selecionarNovoAditivo() {
+        cy.get('body', { timeout: 20000 }).then(($body) => {
+            const opcaoNovoAditivo = $body.find('label, span, nz-radio, div').filter((_, elemento) => {
+                const texto = this.normalizarTexto(elemento.innerText).replace(/\s+/g, ' ').trim()
+                return texto.includes('Novo Aditivo') && !texto.includes('DETRAN-RS')
+            }).first()
+
+            expect(opcaoNovoAditivo, 'opcao Novo Aditivo').to.have.length(1)
+
+            cy.wrap(opcaoNovoAditivo)
+                .should('be.visible')
+                .click({ force: true, waitForAnimations: false })
+        })
+
+        this.aguardarCarregamento()
+
+        cy.get('#protocoloAditivo', { timeout: 20000 })
+            .should('be.visible')
+    }
+
+    preencherProtocoloAditivo(protocolo) {
+        cy.get('#protocoloAditivo', { timeout: 20000 })
+            .should('be.visible')
+            .clear({ force: true })
+            .type(protocolo, { force: true })
+            .blur({ force: true })
+
+        this.aguardarCarregamento()
+    }
+
+    clicarBotaoAditivo() {
+        cy.get('#aditivoForm', { timeout: 20000 })
+            .should('be.visible')
+
+        cy.get('#aditivoForm > section:nth-child(10) > div > button', { timeout: 20000 })
+            .should('be.visible')
+            .and('not.be.disabled')
+            .click({ force: true, waitForAnimations: false })
+
+        this.aguardarCarregamento()
+    }
+
+    abrirFormularioNovoAditivo() {
+        this.clicarBotaoAditivo()
+
+        cy.location('pathname', { timeout: 30000 })
+            .should('include', '/vbconnection/vbauto/contrato/aditivo/inserir')
+
+        cy.get('#aditivoForm', { timeout: 30000 })
+            .should('be.visible')
+    }
+
+    assertContratoBaseAditivoCarregado(protocolo) {
+        cy.get('#protocoloAditivo')
+            .should('have.value', protocolo)
+
+        cy.get('body', { timeout: 30000 })
+            .invoke('text')
+            .should((texto) => {
+                expect(
+                    texto,
+                    'dados do contrato base devem carregar para novo aditivo'
+                ).to.match(/Contrato|Devedor|Credor|Ve[ií]culo|Chassi|CPF|CNPJ/i)
+            })
+    }
+
+    preencherDadosNovoAditivo(dados) {
+        this.selecionarTipoAditivoObrigatorio()
+
+        this.preencherInputPorRotuloSeHabilitado('Registro aditivo SIRCOF', dados.registroAditivoSircof)
+        this.preencherInputPorRotuloSeHabilitado('Numero do aditivo', dados.numeroAditivo)
+        this.preencherInputPorRotuloSeHabilitado('Data do aditivo', dados.dataAditivo)
+        this.preencherInputPorRotuloSeHabilitado('Numero do registro', dados.numeroRegistro)
+
+        this.preencherInputHabilitadoSeExistir(
+            'input[placeholder="Registro aditivo SIRCOF"], input[name="registroAditivoSircof"], input[formcontrolname="registroAditivoSircof"]',
+            dados.registroAditivoSircof
+        )
+
+        this.preencherInputHabilitadoSeExistir(
+            'input[placeholder="NÃºmero do Aditivo"], input[placeholder="Numero do Aditivo"], input[name="numeroAditivo"], input[formcontrolname="numeroAditivo"]',
+            dados.numeroAditivo
+        )
+
+        this.preencherInputHabilitadoSeExistir(
+            'input[placeholder="Data do aditivo"], input[name="dataAditivo"], input[formcontrolname="dataAditivo"]',
+            dados.dataAditivo
+        )
+
+        this.preencherInputHabilitadoSeExistir(
+            'input[placeholder="NÃºmero do registro"], input[placeholder="Numero do registro"], input[name="numeroRegistro"], input[formcontrolname="numeroRegistro"]',
+            dados.numeroRegistro
+        )
+    }
+
+    assertDadosNovoAditivoPreenchidos(dados) {
+        this.assertTipoAditivoPreenchido()
+
+        cy.get('body').then(($body) => {
+            const localizarInput = (rotulo) => {
+                const rotuloNormalizado = this.normalizarTexto(rotulo).toLowerCase()
+                const item = $body.find('.ant-form-item, nz-form-item').filter((_, elemento) => {
+                    return this.normalizarTexto(elemento.innerText).toLowerCase().includes(rotuloNormalizado) &&
+                        Cypress.$(elemento).find('input:visible').length
+                }).first()
+
+                return item.find('input:visible').first()
+            }
+
+            const numeroAditivo = localizarInput('Numero do aditivo')
+            const dataAditivo = localizarInput('Data do aditivo')
+            const numeroRegistro = localizarInput('Numero do registro')
+
+            if (numeroAditivo.length && !numeroAditivo.is(':disabled') && !numeroAditivo.attr('readonly')) {
+                expect(numeroAditivo.val(), 'numero do aditivo').to.eq(dados.numeroAditivo)
+            }
+
+            if (dataAditivo.length && !dataAditivo.is(':disabled') && !dataAditivo.attr('readonly')) {
+                expect(dataAditivo.val(), 'data do aditivo').to.eq(dados.dataAditivo)
+            }
+
+            if (numeroRegistro.length && !numeroRegistro.is(':disabled') && !numeroRegistro.attr('readonly')) {
+                expect(numeroRegistro.val(), 'numero do registro').to.eq(dados.numeroRegistro)
+            }
+        })
+    }
+
+    fecharModalSucessoAditivoSeExibido() {
+        cy.get('body').then(($body) => {
+            const botaoContinuar = $body.find('button').filter((_, button) => {
+                return /Continuar enviando/i.test(button.innerText)
+            }).first()
+
+            if (botaoContinuar.length) {
+                cy.wrap(botaoContinuar).click({ force: true, waitForAnimations: false })
+                this.aguardarCarregamento()
+            }
+        })
+    }
+
+    abrirAlteracaoAditivo(protocoloAditivo) {
+        this.fecharModalSucessoAditivoSeExibido()
+
+        cy.get('body').then(($body) => {
+            if ($body.find('#aditivoForm:visible').length) {
+                return
+            }
+
+            cy.location('pathname', { timeout: 30000 })
+                .should('include', '/vbconnection/vbauto/contrato/consultar')
+
+            this.aguardarAditivoProcessadoNaConsulta(protocoloAditivo)
+
+            cy.contains('tr', protocoloAditivo, { timeout: 30000 })
+                .should('be.visible')
+                .within(() => {
+                    cy.get('button:visible, [role="button"]:visible')
+                        .last()
+                        .click({ force: true, waitForAnimations: false })
+                })
+
+            cy.get('.cdk-overlay-pane, .ant-dropdown, body', { timeout: 10000 })
+                .contains(/Alterar|Editar/i)
+                .click({ force: true, waitForAnimations: false })
+
+            this.aguardarCarregamento()
+
+            cy.location('pathname', { timeout: 30000 })
+                .should('include', '/vbconnection/vbauto/contrato/aditivo')
+        })
+    }
+
+    abrirAlteracaoContrato(protocoloContrato) {
+        this.fecharModalSucessoAditivoSeExibido()
+        this.acessarConsultaContratosAditivos()
+        this.aguardarContratoFinalizadoNaConsulta(protocoloContrato)
+
+        cy.contains('tr', protocoloContrato, { timeout: 30000 })
+            .should('be.visible')
+            .within(() => {
+                cy.get('button:visible, [role="button"]:visible')
+                    .last()
+                    .click({ force: true, waitForAnimations: false })
+            })
+
+        cy.get('.cdk-overlay-pane, .ant-dropdown, body', { timeout: 10000 })
+            .contains(/Alterar|Editar/i)
+            .click({ force: true, waitForAnimations: false })
+
+        this.aguardarCarregamento()
+
+        cy.location('pathname', { timeout: 30000 })
+            .should('include', '/vbconnection/vbauto/contrato')
+
+        cy.get('#contratoForm', { timeout: 30000 })
+            .should('be.visible')
+    }
+
+    aguardarContratoFinalizadoNaConsulta(protocoloContrato, tentativasRestantes = 8) {
+        cy.contains('tr', protocoloContrato, { timeout: 30000 }).then(($linha) => {
+            const textoLinha = this.normalizarTexto($linha.text()).replace(/\s+/g, ' ').trim()
+
+            if (/Registro de Contrato/i.test(textoLinha) && /Finalizado com Sucesso/i.test(textoLinha)) {
+                cy.task('log', `[contrato] ${protocoloContrato} liberado para alteracao: ${textoLinha}`)
+                return
+            }
+
+            if (tentativasRestantes <= 1) {
+                throw new Error(`[contrato] ${protocoloContrato} ainda nao esta Finalizado com Sucesso para alteracao. Linha: ${textoLinha}`)
+            }
+
+            cy.task('log', `[contrato] ${protocoloContrato} ainda em processamento. Tentativas restantes: ${tentativasRestantes - 1}`)
+            cy.wait(10000, { log: false })
+
+            cy.get('body').then(($body) => {
+                const botaoPesquisar = $body.find('button').filter((_, button) => {
+                    return /Pesquisar|Consultar/i.test(button.innerText)
+                }).first()
+
+                if (botaoPesquisar.length) {
+                    cy.wrap(botaoPesquisar).click({ force: true, waitForAnimations: false })
+                    this.aguardarCarregamento()
+                }
+            })
+
+            this.aguardarContratoFinalizadoNaConsulta(protocoloContrato, tentativasRestantes - 1)
+        })
+    }
+
+    preencherDadosAlteracaoContrato(dados) {
+        cy.get('#contratoForm', { timeout: 30000 })
+            .scrollIntoView({ ensureScrollable: false })
+            .should('be.visible')
+
+        this.preencherInputHabilitadoSeExistir(
+            'input[placeholder="Penalidade"], textarea[placeholder="Penalidade"], input[name="penalidade"], textarea[name="penalidade"], input[formcontrolname="penalidade"], textarea[formcontrolname="penalidade"]',
+            dados.descricaoPenalidade
+        )
+
+        this.preencherInputHabilitadoSeExistir(
+            'input[placeholder="IOF"], input[name="iof"], input[formcontrolname="iof"]',
+            dados.iof
+        )
+    }
+
+    enviarAlteracaoContrato() {
+        cy.intercept({ url: '**/vbauto.api/api/contratos/**' }).as('postAlteracaoContrato')
+
+        cy.get('#contratoForm', { timeout: 20000 })
+            .should('exist')
+            .scrollTo('bottom', { ensureScrollable: false })
+
+        this.clicarBotaoAlterarContrato()
+        this.confirmarProsseguirSeNecessario()
+
+        return cy.wait('@postAlteracaoContrato', { timeout: 60000 }).then((interception) => {
+            const status = interception.response?.statusCode || 'sem-status'
+            const body = interception.response?.body || {}
+            const corpo = JSON.stringify(body).slice(0, 1000)
+            const protocolo = body.protocolo || body.numeroProtocolo || body.data?.protocolo
+
+            return cy.task('log', `[alteracao-contrato] ${interception.request.method} ${interception.request.url} -> ${status} ${corpo}`)
+                .then(() => {
+                    if (protocolo) {
+                        return cy.wrap(protocolo, { log: false })
+                    }
+
+                    this.aguardarCarregamento()
+                    this.confirmarEnvioSeNecessario()
+                    this.aguardarCarregamento()
+                    this.assertProtocoloGerado()
+                    return this.capturarProtocoloGerado()
+                })
+        })
+    }
+
+    clicarBotaoAlterarContrato() {
+        cy.get('body').then(($body) => {
+            const botoes = $body.find('#contratoForm button').filter((_, button) => {
+                return /Alterar Contrato|Enviar Alteracao|Enviar Alteração|Finalizar/i.test(this.normalizarTexto(button.innerText))
+            })
+
+            expect(
+                [...botoes].map((button) => button.innerText.trim()).join(' | '),
+                'botao final de alteracao de contrato'
+            ).not.to.eq('')
+
+            cy.wrap(botoes.last())
+                .scrollIntoView({ ensureScrollable: false })
+                .should('be.visible')
+                .and('not.be.disabled')
+                .click({ force: true, waitForAnimations: false })
+        })
+    }
+
+    confirmarProsseguirSeNecessario() {
+        cy.get('body').then(($body) => {
+            const botaoProsseguir = $body.find('button').filter((_, button) => {
+                return /Sim,\s*prosseguir|Prosseguir|Confirmar/i.test(button.innerText)
+            }).first()
+
+            if (botaoProsseguir.length) {
+                cy.wrap(botaoProsseguir).click({ force: true, waitForAnimations: false })
+            }
+        })
+    }
+
+    validarTipoAditivoPersistido(protocoloAditivo) {
+        this.acessarConsultaContratosAditivos()
+        this.aguardarAditivoProcessadoNaConsulta(protocoloAditivo)
+
+        cy.visit(`/vbconnection/vbauto/contrato/aditivo/editar/${protocoloAditivo}`)
+        this.aguardarCarregamento()
+
+        cy.location('pathname', { timeout: 30000 })
+            .should('include', `/vbconnection/vbauto/contrato/aditivo/editar/${protocoloAditivo}`)
+
+        cy.get('#aditivoForm', { timeout: 30000 })
+            .should('be.visible')
+
+        this.assertTipoAditivoPreenchido()
+    }
+
+    aguardarAditivoProcessadoNaConsulta(protocoloAditivo, tentativasRestantes = 6) {
+        cy.contains('tr', protocoloAditivo, { timeout: 30000 }).then(($linha) => {
+            const textoLinha = this.normalizarTexto($linha.text()).replace(/\s+/g, ' ').trim()
+
+            if (/Finalizado com Sucesso/i.test(textoLinha)) {
+                cy.task('log', `[aditivo] ${protocoloAditivo} liberado para alteracao: ${textoLinha}`)
+                return
+            }
+
+            if (tentativasRestantes <= 1) {
+                throw new Error(`[aditivo] ${protocoloAditivo} ainda nao esta Finalizado com Sucesso para alteracao. Linha: ${textoLinha}`)
+            }
+
+            cy.task('log', `[aditivo] ${protocoloAditivo} ainda em processamento. Tentativas restantes: ${tentativasRestantes - 1}`)
+            cy.wait(10000, { log: false })
+
+            cy.get('body').then(($body) => {
+                const botaoPesquisar = $body.find('button').filter((_, button) => {
+                    return /Pesquisar|Consultar/i.test(button.innerText)
+                }).first()
+
+                if (botaoPesquisar.length) {
+                    cy.wrap(botaoPesquisar).click({ force: true, waitForAnimations: false })
+                    this.aguardarCarregamento()
+                }
+            })
+
+            this.aguardarAditivoProcessadoNaConsulta(protocoloAditivo, tentativasRestantes - 1)
+        })
+    }
+
+    preencherDestinoAgenteAditivoSeNecessario(detran, agenteFinanceiro) {
+        cy.get('body').then(($body) => {
+            const destino = $body.find('nz-select[formcontrolname="destino"]:visible').first()
+
+            if (destino.length &&
+                !destino.hasClass('ant-select-disabled') &&
+                !this.normalizarTexto(destino.text()).includes(detran)) {
+                this.selecionarDetran(detran)
+            }
+        })
+
+        cy.get('body').then(($body) => {
+            const agente = $body.find('nz-select[formcontrolname="agenteFinanceiro"]:visible').first()
+
+            if (agente.length &&
+                !agente.hasClass('ant-select-disabled') &&
+                !this.normalizarTexto(agente.text()).includes(agenteFinanceiro)) {
+                this.selecionarAgenteFinanceiro(agenteFinanceiro)
+            }
+        })
+
+        this.selecionarSelectPorRotuloSeExistir('Agente Financeiro / CNPJ', agenteFinanceiro)
+        this.selecionarSelectPorRotuloSeExistir('Agente Financeiro', agenteFinanceiro)
+    }
+
+    acessarConsultaContratosAditivos() {
+        cy.visit('/vbconnection/vbauto/contrato/consultar')
+        this.aguardarCarregamento()
+
+        cy.location('pathname', { timeout: 30000 })
+            .should('include', '/vbconnection/vbauto/contrato/consultar')
+
+        cy.get('table tbody tr', { timeout: 30000 })
+            .should('have.length.at.least', 1)
+    }
+
+    abrirPrimeiroAditivoElegivelParaAlteracao() {
+        this.acessarConsultaContratosAditivos()
+
+        return cy.get('table tbody tr', { timeout: 30000 }).then(($linhas) => {
+            const linhasElegiveis = [...$linhas].filter((linha) => {
+                const texto = this.normalizarTexto(linha.innerText).replace(/\s+/g, ' ').trim()
+                return /Registro de Aditivo/i.test(texto) &&
+                    /Finalizado com Sucesso|Finalizado|Aguardando Envio/i.test(texto)
+            })
+
+            expect(
+                linhasElegiveis.map((linha) => this.normalizarValorCampo(linha.innerText)).join(' | '),
+                'aditivo elegivel para alteracao'
+            ).not.to.eq('')
+
+            const linha = linhasElegiveis[0]
+            const protocolo = this.normalizarValorCampo(Cypress.$(linha).find('td').first().text())
+
+            expect(protocolo, 'protocolo do aditivo elegivel').to.match(/\d{4,}/)
+
+            cy.wrap(linha).within(() => {
+                cy.get('button:visible, [role="button"]:visible')
+                    .last()
+                    .click({ force: true, waitForAnimations: false })
+            })
+
+            cy.get('.cdk-overlay-pane, .ant-dropdown, body', { timeout: 10000 })
+                .contains(/Alterar|Editar/i)
+                .click({ force: true, waitForAnimations: false })
+
+            this.aguardarCarregamento()
+
+            cy.location('pathname', { timeout: 30000 })
+                .should('include', '/vbconnection/vbauto/contrato/aditivo')
+
+            cy.task('log', `[aditivo] protocolo selecionado para alteracao: ${protocolo}`)
+            return cy.wrap(protocolo, { log: false })
+        })
+    }
+
+    preencherDadosAlteracaoAditivo(dados) {
+        cy.get('#aditivoForm', { timeout: 30000 })
+            .scrollIntoView({ ensureScrollable: false })
+            .should('be.visible')
+
+        this.habilitarEdicaoSecaoAditivoSeNecessario()
+        this.selecionarTipoAditivoObrigatorio()
+        this.preencherInputPorRotuloSeHabilitado('Numero do aditivo', dados.numeroAditivo)
+        this.preencherInputPorRotuloSeHabilitado('Numero do registro', dados.numeroRegistro)
+        this.preencherInputPorRotuloSeHabilitado('Data do aditivo', dados.dataAditivo)
+
+        this.preencherInputHabilitadoSeExistir(
+            'input[placeholder="NÃƒÂºmero do Aditivo"], input[placeholder="Numero do Aditivo"], input[name="numeroAditivo"], input[formcontrolname="numeroAditivo"]',
+            dados.numeroAditivo
+        )
+
+        this.preencherInputHabilitadoSeExistir(
+            'input[placeholder="NÃƒÂºmero do registro"], input[placeholder="Numero do registro"], input[name="numeroRegistro"], input[formcontrolname="numeroRegistro"]',
+            dados.numeroRegistro
+        )
+    }
+
+    habilitarEdicaoSecaoAditivoSeNecessario() {
+        cy.get('body').then(($body) => {
+            const secaoAditivo = $body.find('#aditivoForm section').filter((_, section) => {
+                const texto = this.normalizarTexto(section.innerText)
+                return /Aditivo/i.test(texto) && /Tipo de Aditivo|Numero do aditivo/i.test(texto)
+            }).first()
+
+            if (!secaoAditivo.length) {
+                return
+            }
+
+            const possuiCampoEditavel = secaoAditivo.find('input:visible, textarea:visible').toArray().some((campo) => {
+                const $campo = Cypress.$(campo)
+                return !$campo.is(':disabled') && !$campo.attr('readonly')
+            })
+
+            if (possuiCampoEditavel) {
+                return
+            }
+
+            const acionador = secaoAditivo.find('button:visible, [role="button"]:visible, i:visible, span.anticon:visible, svg:visible').filter((_, elemento) => {
+                return !Cypress.$(elemento).closest('nz-select, input, textarea').length
+            }).last()
+
+            if (acionador.length) {
+                cy.wrap(acionador).click({ force: true, waitForAnimations: false })
+                this.aguardarCarregamento()
+            }
+        })
+    }
+
+    assertDadosAlteracaoAditivoPreenchidos(dados) {
+        cy.get('body').then(($body) => {
+            const localizarInput = (rotulo) => {
+                const rotuloNormalizado = this.normalizarTexto(rotulo).toLowerCase()
+                const item = $body.find('.ant-form-item, nz-form-item').filter((_, elemento) => {
+                    return this.normalizarTexto(elemento.innerText).toLowerCase().includes(rotuloNormalizado) &&
+                        Cypress.$(elemento).find('input:visible').length
+                }).first()
+
+                return item.find('input:visible').first()
+            }
+
+            const numeroAditivo = localizarInput('Numero do aditivo')
+            const numeroRegistro = localizarInput('Numero do registro')
+
+            if (numeroAditivo.length && !numeroAditivo.is(':disabled') && !numeroAditivo.attr('readonly')) {
+                expect(numeroAditivo.val(), 'numero do aditivo alterado').to.eq(dados.numeroAditivo)
+            }
+
+            if (numeroRegistro.length && !numeroRegistro.is(':disabled') && !numeroRegistro.attr('readonly')) {
+                expect(numeroRegistro.val(), 'numero do registro alterado').to.eq(dados.numeroRegistro)
+            }
+        })
+    }
+
+    enviarNovoAditivo() {
+        this.assertTipoAditivoPreenchido()
+
+        cy.intercept({ url: '**/vbauto.api/api/contratos/aditivo/**' }).as('postEnvioAditivo')
+
+        cy.get('#aditivoForm', { timeout: 20000 })
+            .should('be.visible')
+
+        this.clicarBotaoEnviarAditivo()
+
+        return this.registrarRespostaEnvioAditivo().then((envio) => {
+            if (envio.protocolo) {
+                return cy.wrap(envio.protocolo, { log: false })
+            }
+
+            this.aguardarCarregamento()
+            this.confirmarEnvioSeNecessario()
+            this.aguardarCarregamento()
+
+            this.assertProtocoloGerado()
+            return this.capturarProtocoloGerado()
+        })
+    }
+
+    enviarAlteracaoAditivo() {
+        cy.intercept({ url: '**/vbauto.api/api/contratos/aditivo/**' }).as('postEnvioAditivo')
+
+        cy.get('#aditivoForm', { timeout: 20000 })
+            .should('exist')
+            .scrollTo('bottom', { ensureScrollable: false })
+
+        this.clicarBotaoEnviarAditivo()
+
+        return this.registrarRespostaEnvioAditivo().then((envio) => {
+            this.assertPayloadAlteracaoAditivoComTipo(envio)
+
+            if (envio.protocolo) {
+                return cy.wrap(envio.protocolo, { log: false })
+            }
+
+            this.aguardarCarregamento()
+            this.confirmarEnvioSeNecessario()
+            this.aguardarCarregamento()
+
+            this.assertProtocoloGerado()
+            return this.capturarProtocoloGerado()
+        })
+    }
+
+    assertPayloadAlteracaoAditivoComTipo(envio) {
+        if (!/\/alterar/i.test(envio.url || '')) {
+            return
+        }
+
+        const valoresTipo = []
+        const visitar = (valor, caminho = '') => {
+            if (!valor || typeof valor !== 'object') {
+                return
+            }
+
+            Object.entries(valor).forEach(([chave, conteudo]) => {
+                const proximoCaminho = caminho ? `${caminho}.${chave}` : chave
+                const chaveNormalizada = this.normalizarTexto(chave).toLowerCase()
+
+                if (/tipo.*aditivo|aditivo.*tipo|tipoAditivo/i.test(chave) ||
+                    (chaveNormalizada.includes('tipo') && chaveNormalizada.includes('aditivo'))) {
+                    valoresTipo.push({
+                        caminho: proximoCaminho,
+                        valor: conteudo
+                    })
+                }
+
+                if (conteudo && typeof conteudo === 'object') {
+                    visitar(conteudo, proximoCaminho)
+                }
+            })
+        }
+
+        visitar(envio.requestBody)
+
+        const valoresPreenchidos = valoresTipo.filter(({ valor }) => {
+            if (valor === null || valor === undefined) {
+                return false
+            }
+
+            if (typeof valor === 'object') {
+                return Object.values(valor).some((item) => {
+                    return item !== null && item !== undefined && String(item).trim() !== ''
+                })
+            }
+
+            return String(valor).trim() !== ''
+        })
+
+        cy.task(
+            'log',
+            `[aditivo] campos de tipo no payload=${JSON.stringify(valoresTipo).slice(0, 1000) || 'nenhum'}`
+        )
+
+        expect(
+            valoresPreenchidos.map(({ caminho, valor }) => `${caminho}=${JSON.stringify(valor)}`).join(' | '),
+            'Tipo de Aditivo deve ser enviado no payload de alteracao'
+        ).not.to.eq('')
+    }
+
+    clicarBotaoEnviarAditivo() {
+        cy.get('body').then(($body) => {
+            const resumoBotoes = [...$body.find('#aditivoForm button')].map((button, indice) => {
+                const texto = this.normalizarValorCampo(button.innerText) || '[sem texto]'
+                const tipo = Cypress.$(button).attr('type') || 'sem-type'
+                const classes = Cypress.$(button).attr('class') || 'sem-classe'
+                return `${indice}:${texto}:${tipo}:${classes}`
+            }).join(' | ')
+
+            cy.task('log', `[aditivo] botoes no formulario=${resumoBotoes || 'nenhum'}`)
+
+            const botaoSeletorPrincipal = $body
+                .find('#aditivoForm > section:nth-child(10) > div > button')
+                .first()
+
+            if (botaoSeletorPrincipal.length) {
+                cy.wrap(botaoSeletorPrincipal)
+                    .scrollIntoView({ ensureScrollable: false })
+                    .click({ force: true, waitForAnimations: false })
+                return
+            }
+
+            const botoesFormulario = $body.find('#aditivoForm button').filter((_, button) => {
+                const texto = this.normalizarTexto(button.innerText)
+                const tipo = Cypress.$(button).attr('type') || ''
+                return /Enviar|Salvar|Finalizar|Alterar|Registrar/i.test(texto) || tipo === 'submit'
+            })
+
+            const botoesFallback = botoesFormulario.length
+                ? botoesFormulario
+                : $body.find('#aditivoForm section button')
+
+            expect(
+                [...botoesFallback].map((button) => button.innerText.trim()).join(' | '),
+                'botao de envio do aditivo'
+            ).not.to.eq('')
+
+            cy.wrap(botoesFallback.last())
+                .scrollIntoView({ ensureScrollable: false })
+                .click({ force: true, waitForAnimations: false })
+        })
+    }
+
+    registrarRespostaEnvioAditivo() {
+        return cy.wait('@postEnvioAditivo', { timeout: 60000 }).then((interception) => {
+            const status = interception.response?.statusCode || 'sem-status'
+            const body = interception.response?.body || {}
+            const corpo = JSON.stringify(body).slice(0, 1000)
+            const requestBody = interception.request?.body || {}
+            const protocolo = body.protocolo || body.numeroProtocolo || body.data?.protocolo
+
+            return cy.task(
+                'log',
+                `[envio-aditivo] ${interception.request.method} ${interception.request.url} -> ${status} ${corpo}`
+            ).then(() => {
+                return {
+                    protocolo,
+                    requestBody,
+                    url: interception.request.url
+                }
+            })
         })
     }
 
@@ -916,6 +1765,7 @@ class ContratoPage {
         this.confirmarEnvioSeNecessario()
         this.aguardarCarregamento()
         this.assertProtocoloGerado()
+        return this.capturarProtocoloGerado()
     }
 
     registrarRespostaEnvio() {
@@ -970,10 +1820,23 @@ class ContratoPage {
         cy.contains(/protocolo/i, { timeout: 30000 })
             .should('be.visible')
 
-        cy.get('body')
+        return cy.get('body')
             .invoke('text')
             .should((texto) => {
                 expect(texto, 'número de protocolo gerado').to.match(/protocolo[\s\S]{0,120}\d{4,}/i)
+            })
+    }
+
+    capturarProtocoloGerado() {
+        return cy.get('body')
+            .invoke('text')
+            .then((texto) => {
+                const match = texto.match(/protocolo[\s\S]{0,120}?([A-Z0-9.-]*\d{4,}[A-Z0-9.-]*)/i)
+                const protocolo = match?.[1]?.replace(/[^\dA-Z.-]/gi, '')
+
+                expect(protocolo, 'protocolo capturado').to.not.be.empty
+
+                return cy.task('log', `[envio-contrato] protocolo capturado: ${protocolo}`).then(() => protocolo)
             })
     }
 
