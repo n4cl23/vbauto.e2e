@@ -45,9 +45,15 @@ cypress/
     contratoActions.js
   e2e/
     cadastro_cnpj_alfanumerico.cy.js
+    api/
+      webservice/
+        registro_contrato_webservice.cy.js
     contrato/
+      alteracao_aditivo.cy.js
+      alteracao_contrato.cy.js
       contrato_novo.cy.js
       contrato_usado.cy.js
+      registro_aditivo.cy.js
   fixtures/
     detrans.json
     detransIgnorados.json
@@ -73,6 +79,42 @@ As suites abaixo compoem a regressao principal executada por `npm test`:
 | `cadastro_cnpj_alfanumerico.cy.js` | Cadastro usando CNPJ alfanumerico unico |
 
 Specs antigos de login isolado, contrato generico e veiculo novo/usado foram removidos para evitar redundancia.
+
+## Suites API / Webservice
+
+As suites de API ficam separadas das suites de UI em `cypress/e2e/api/webservice`.
+
+| Suite | Objetivo |
+| --- | --- |
+| `api/webservice/registro_contrato_webservice.cy.js` | Registro de contrato via endpoint REST para os DETRANs elegiveis |
+
+A suite de webservice:
+
+- autentica em `/vbauto.api/auth/ws/tokens` usando as credenciais do `.env`;
+- envia contratos em `/vbauto.api/ws/rest/contratos/v2`;
+- reutiliza a massa dinamica por UF;
+- gera contrato, devedor, credor, chassi, placa e RENAVAM unicos por execucao;
+- percorre os DETRANs configurados em `cypress/fixtures/detrans.json`;
+- ignora os DETRANs configurados em `cypress/fixtures/detransIgnorados.json`;
+- valida status de sucesso e protocolo retornado.
+
+Excecoes especificas da suite de webservice:
+
+| Motivo | DETRANs |
+| --- | --- |
+| Retorno HMG sem protocolo (`99999 - Erro inesperado`) | `DETRAN-RJ` |
+
+Executar somente webservice de contrato:
+
+```bash
+npm run test:ws:contrato
+```
+
+Executar webservice para um DETRAN especifico:
+
+```bash
+npm run test:ws:contrato -- --env detran=DETRAN-MG
+```
 
 ## Specs em Mapeamento
 
@@ -204,6 +246,12 @@ Executar specs em mapeamento:
 npm run test:alteracao:contrato
 npm run test:aditivo:registro
 npm run test:aditivo:alteracao
+```
+
+Executar contrato via webservice:
+
+```bash
+npm run test:ws:contrato
 ```
 
 ## Relatorios e Evidencias

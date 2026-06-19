@@ -3,6 +3,20 @@ import { gerarPessoaPorUf, gerarVeiculoNovoPorUf, obterEnderecoPorUf, validarPes
 
 const AGENTE_FINANCEIRO = 'Banco Piloto'
 
+const formatarDataPtBr = (data) => data.toLocaleDateString('pt-BR')
+
+const somarDias = (dataBase, dias) => {
+    const data = new Date(dataBase)
+    data.setDate(data.getDate() + dias)
+    return data
+}
+
+const somarMeses = (dataBase, meses) => {
+    const data = new Date(dataBase)
+    data.setMonth(data.getMonth() + meses)
+    return data
+}
+
 class ContratoActions {
     logMassa(mensagem) {
         cy.log(`[massa] ${mensagem}`)
@@ -33,7 +47,10 @@ class ContratoActions {
 
     gerarDadosContrato(detran, overrides = {}) {
         const hoje = new Date()
-        const dataAtual = hoje.toLocaleDateString('pt-BR')
+        const dataAtual = formatarDataPtBr(hoje)
+        const dataPrimeiraParcela = formatarDataPtBr(somarDias(hoje, 30))
+        const dataUltimaParcela = formatarDataPtBr(somarMeses(hoje, 12))
+        const dataFimVigencia = formatarDataPtBr(somarMeses(hoje, 12))
         const timestamp = Date.now().toString().slice(-10)
         const randomico = Cypress._.random(10, 99)
         const uf = detran.replace('DETRAN-', '')
@@ -47,6 +64,12 @@ class ContratoActions {
         return {
             numeroContrato: `${timestamp}${randomico}`,
             dataAtual,
+            dataLiberacaoCredito: dataAtual,
+            dataPrimeiraParcela,
+            dataUltimaParcela,
+            dataInicioVigencia: dataAtual,
+            dataFimVigencia,
+            dataPagamento: dataPrimeiraParcela,
             parcela: '1',
             quantidadeParcelas: '12',
             totalFinanciamento: '25000',

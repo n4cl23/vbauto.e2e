@@ -10,7 +10,8 @@
     "test:cadastro:cnpj": "cypress run --spec \"cypress/e2e/cadastro_cnpj_alfanumerico.cy.js\"",
     "test:alteracao:contrato": "cypress run --spec \"cypress/e2e/contrato/alteracao_contrato.cy.js\"",
     "test:aditivo:registro": "cypress run --spec \"cypress/e2e/contrato/registro_aditivo.cy.js\"",
-    "test:aditivo:alteracao": "cypress run --spec \"cypress/e2e/contrato/alteracao_aditivo.cy.js\""
+    "test:aditivo:alteracao": "cypress run --spec \"cypress/e2e/contrato/alteracao_aditivo.cy.js\"",
+    "test:ws:contrato": "cypress run --spec \"cypress/e2e/api/webservice/registro_contrato_webservice.cy.js\""
   },
   "repository": {
     "type": "git",

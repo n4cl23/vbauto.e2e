@@ -116,6 +116,36 @@ class ContratoPage {
         })
     }
 
+    preencherInputPorLabelContrato(rotulo, valor) {
+        return cy.get('#contratoForm').then(($formulario) => {
+            const rotuloNormalizado = this.normalizarTexto(rotulo).toLowerCase()
+            const label = $formulario.find('label, nz-form-label, .ant-form-item-label, span').filter((_, elemento) => {
+                const texto = this.normalizarTexto(elemento.innerText).toLowerCase()
+                return texto.includes(rotuloNormalizado)
+            }).first()
+
+            if (!label.length) {
+                cy.log(`[massa] label nao encontrado: ${rotulo}`)
+                return cy.wrap(false, { log: false })
+            }
+
+            const container = label.closest('.ant-form-item, nz-form-item, .row, div')
+            let campo = container.find('input:visible').first()
+
+            if (!campo.length) {
+                campo = container.nextAll().find('input:visible').first()
+            }
+
+            if (!campo.length) {
+                cy.log(`[massa] input nao encontrado para label: ${rotulo}`)
+                return cy.wrap(false, { log: false })
+            }
+
+            this.preencherCampoSeNecessario(campo, valor, rotulo)
+            return cy.wrap(true, { log: false })
+        })
+    }
+
     selecionarSelectSeExistir(selectors, textoOpcao) {
         return cy.get('body').then(($body) => {
             const select = $body.find(selectors).filter(':visible').first()
@@ -1285,6 +1315,8 @@ class ContratoPage {
             dados.dataAtual
         )
 
+        this.corrigirDatasContrato(dados)
+
         this.preencherInputSeExistir(
             'input[placeholder="Total Financiamento"], input[placeholder="Total financiamento"]',
             dados.totalFinanciamento
@@ -1394,6 +1426,42 @@ class ContratoPage {
         this.preencherDadosPessoa('Devedor', dados.devedor)
         this.preencherDadosPessoa('Credor', dados.credor)
         this.preencherSelectsObrigatoriosPendentes()
+    }
+
+    corrigirDatasContrato(dados) {
+        const datasObrigatorias = [
+            ['primeira parcela', dados.dataPrimeiraParcela],
+            ['ultima parcela', dados.dataUltimaParcela],
+            ['fim de vigencia', dados.dataFimVigencia]
+        ]
+
+        datasObrigatorias.forEach(([campo, valor]) => {
+            expect(valor, `data obrigatoria: ${campo}`).to.not.be.empty
+        })
+
+        this.preencherInputSeExistir(
+            'input#primeiraParcela, input[name="primeiraParcela"], input[formcontrolname="primeiraParcela"], input[placeholder="Dia da primeira parcela"], input[name="dataPrimeiraParcela"], input[name="dataVencimentoPrimeiraParcela"], input[formcontrolname="dataPrimeiraParcela"], input[formcontrolname="dataVencimentoPrimeiraParcela"]',
+            dados.dataPrimeiraParcela
+        )
+        this.preencherInputPorRotuloSeHabilitado('Data da primeira parcela', dados.dataPrimeiraParcela)
+        this.preencherInputPorLabelContrato('Data da primeira parcela', dados.dataPrimeiraParcela)
+
+        this.preencherInputSeExistir(
+            'input#ultimaParcela, input[name="ultimaParcela"], input[formcontrolname="ultimaParcela"], input[placeholder="Dia da Ãºltima parcela"], input[placeholder="Dia da ultima parcela"], input[name="dataUltimaParcela"], input[name="dataVencimentoUltimaParcela"], input[formcontrolname="dataUltimaParcela"], input[formcontrolname="dataVencimentoUltimaParcela"]',
+            dados.dataUltimaParcela
+        )
+        this.preencherInputPorRotuloSeHabilitado('Data da ultima parcela', dados.dataUltimaParcela)
+        this.preencherInputPorLabelContrato('Data da ultima parcela', dados.dataUltimaParcela)
+
+        this.preencherTodosInputsSeExistirem(
+            'input[placeholder="Data do Pagamento"], input[placeholder="Data do pagamento"], input#dataPagamento',
+            dados.dataPagamento
+        )
+
+        this.preencherInputSeExistir(
+            'input[placeholder="Fim de vigÃªncia"], input[placeholder="Fim de vigencia"], input#finalVigencia',
+            dados.dataFimVigencia
+        )
     }
 
     preencherDadosPessoa(tipo, dados) {
@@ -1754,10 +1822,11 @@ class ContratoPage {
     }
 
     enviarContrato() {
+        this.corrigirDatasContrato(this.ultimoDadosContrato)
         this.assertCamposObrigatoriosContratoPreenchidos(this.ultimoDadosContrato)
         this.salvarVeiculo()
 
-        cy.intercept({ method: 'POST', url: '**' }).as('postEnvioContrato')
+        cy.intercept({ method: 'POST', url: '**/contratos/registrar**' }).as('postEnvioContrato')
         this.clicarBotaoEnviarContrato()
         this.registrarRespostaEnvio()
 
@@ -1772,9 +1841,36 @@ class ContratoPage {
         cy.wait('@postEnvioContrato', { timeout: 60000 }).then((interception) => {
             const status = interception.response?.statusCode || 'sem-status'
             const corpo = JSON.stringify(interception.response?.body || {}).slice(0, 1000)
+            const datasPayload = this.resumirCamposPayload(interception.request.body, /parcela|data/i)
 
+            cy.wrap(interception.request.body, { log: false }).as('ultimoPayloadEnvioContrato')
             cy.task('log', `[envio-contrato] ${interception.request.method} ${interception.request.url} -> ${status} ${corpo}`)
+            expect(status, `status registro contrato; datas=${datasPayload}; body=${corpo}`).to.be.oneOf([200, 201, 202])
         })
+    }
+
+    resumirCamposPayload(valor, padraoChave, caminho = '') {
+        if (!valor || typeof valor !== 'object') {
+            return ''
+        }
+
+        return Object.entries(valor)
+            .flatMap(([chave, item]) => {
+                const caminhoAtual = caminho ? `${caminho}.${chave}` : chave
+
+                if (padraoChave.test(chave)) {
+                    return [`${caminhoAtual}=${JSON.stringify(item)}`]
+                }
+
+                if (item && typeof item === 'object') {
+                    return this.resumirCamposPayload(item, padraoChave, caminhoAtual)
+                }
+
+                return []
+            })
+            .filter(Boolean)
+            .slice(0, 30)
+            .join('; ')
     }
 
     clicarBotaoEnviarContrato() {
