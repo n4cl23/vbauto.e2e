@@ -45,6 +45,8 @@ cypress/
     contratoActions.js
   config/
     detransConfig.js
+    ufsConfig.js
+    webserviceConfig.js
   e2e/
     aditivos/
       alteracao_aditivo.cy.js
@@ -66,6 +68,8 @@ cypress/
       novo.json
       usado.json
   pages/
+    common/
+      formPage.js
     contratoPage.js
   support/
     commands.js
@@ -74,6 +78,8 @@ cypress/
     webserviceContrato.js
   services/
     contratoWsService.js
+  utils/
+    dateUtils.js
 ```
 
 ## Suites Ativas da Regressao
@@ -273,7 +279,7 @@ Screenshots e videos de falha tambem ficam fora do versionamento, conforme `.git
 Para adicionar um novo DETRAN elegivel:
 
 1. Incluir o DETRAN em `cypress/fixtures/detrans.json`.
-2. Garantir que a UF correspondente exista em `cypress/factories/massaDadosFactory.js`.
+2. Garantir que a UF correspondente exista em `cypress/config/ufsConfig.js`.
 3. Rodar smoke com `npm test -- --env detran=DETRAN-UF`.
 4. Rodar a regressao completa antes de promover a alteracao.
 

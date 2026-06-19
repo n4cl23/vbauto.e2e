@@ -7,22 +7,9 @@ import {
     validarPessoa,
     validarVeiculo
 } from "../factories/massaDadosFactory"
+import { formatarDataPtBr, somarDias, somarMeses } from "../utils/dateUtils"
 
 const AGENTE_FINANCEIRO = 'Banco Piloto'
-
-const formatarDataPtBr = (data) => data.toLocaleDateString('pt-BR')
-
-const somarDias = (dataBase, dias) => {
-    const data = new Date(dataBase)
-    data.setDate(data.getDate() + dias)
-    return data
-}
-
-const somarMeses = (dataBase, meses) => {
-    const data = new Date(dataBase)
-    data.setMonth(data.getMonth() + meses)
-    return data
-}
 
 class ContratoActions {
     logMassa(mensagem) {
