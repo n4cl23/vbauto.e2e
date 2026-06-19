@@ -1,5 +1,12 @@
 import contratoPage from "../pages/contratoPage"
-import { gerarPessoaPorUf, gerarVeiculoNovoPorUf, obterEnderecoPorUf, validarPessoa } from "../support/massaDados"
+import {
+    gerarPessoaPorUf,
+    gerarVeiculoNovoPorUf,
+    gerarVeiculoUsadoPorUf,
+    obterEnderecoPorUf,
+    validarPessoa,
+    validarVeiculo
+} from "../factories/massaDadosFactory"
 
 const AGENTE_FINANCEIRO = 'Banco Piloto'
 
@@ -143,20 +150,32 @@ class ContratoActions {
     }
 
     registrarContratoNovoComProtocolo(detran, overrides = {}) {
-        const veiculo = gerarVeiculoNovoPorUf(detran)
+        return this.registrarContratoPorTipo(detran, 'novo', overrides)
+    }
+
+    registrarContratoPorTipo(detran, tipoVeiculo = 'novo', overrides = {}) {
+        const veiculo = tipoVeiculo === 'usado'
+            ? gerarVeiculoUsadoPorUf(detran)
+            : gerarVeiculoNovoPorUf(detran)
+
+        validarVeiculo(veiculo, tipoVeiculo)
 
         this.iniciarFluxoContrato(detran)
         const dadosContrato = this.preencherDadosContrato(detran, overrides)
-        this.adicionarVeiculoNovo(veiculo)
+
+        if (tipoVeiculo === 'usado') {
+            this.adicionarVeiculoUsado(veiculo, detran)
+        } else {
+            this.adicionarVeiculoNovo(veiculo)
+        }
 
         contratoPage.assertBotaoSalvarHabilitado()
-        return this.enviarContrato().then((protocolo) => {
-            return {
-                protocolo,
-                dadosContrato,
-                veiculo
-            }
-        })
+        return this.enviarContrato().then((protocolo) => ({
+            protocolo,
+            dadosContrato,
+            veiculo,
+            tipoVeiculo
+        }))
     }
 
     alterarContratoComProtocolo(detran, overrides = {}) {

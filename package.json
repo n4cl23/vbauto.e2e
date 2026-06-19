@@ -4,14 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "cypress run --spec \"cypress/e2e/contrato/contrato_novo.cy.js,cypress/e2e/contrato/contrato_usado.cy.js,cypress/e2e/cadastro_cnpj_alfanumerico.cy.js\"",
+    "test": "cypress run --spec \"cypress/e2e/contratos/contrato_novo.cy.js,cypress/e2e/contratos/contrato_usado.cy.js,cypress/e2e/contratos/cadastro_cnpj_alfanumerico.cy.js\"",
     "test:open": "cypress open",
-    "test:contrato": "cypress run --spec \"cypress/e2e/contrato/contrato_novo.cy.js,cypress/e2e/contrato/contrato_usado.cy.js\"",
-    "test:cadastro:cnpj": "cypress run --spec \"cypress/e2e/cadastro_cnpj_alfanumerico.cy.js\"",
-    "test:alteracao:contrato": "cypress run --spec \"cypress/e2e/contrato/alteracao_contrato.cy.js\"",
-    "test:aditivo:registro": "cypress run --spec \"cypress/e2e/contrato/registro_aditivo.cy.js\"",
-    "test:aditivo:alteracao": "cypress run --spec \"cypress/e2e/contrato/alteracao_aditivo.cy.js\"",
-    "test:ws:contrato": "cypress run --spec \"cypress/e2e/api/webservice/registro_contrato_webservice.cy.js\""
+    "test:contrato": "cypress run --spec \"cypress/e2e/contratos/contrato_novo.cy.js,cypress/e2e/contratos/contrato_usado.cy.js\"",
+    "test:cadastro:cnpj": "cypress run --spec \"cypress/e2e/contratos/cadastro_cnpj_alfanumerico.cy.js\"",
+    "test:alteracao:contrato": "cypress run --spec \"cypress/e2e/alteracoes/alteracao_contrato.cy.js\"",
+    "test:aditivo:registro": "cypress run --spec \"cypress/e2e/aditivos/registro_aditivo.cy.js\"",
+    "test:aditivo:alteracao": "cypress run --spec \"cypress/e2e/aditivos/alteracao_aditivo.cy.js\"",
+    "test:ws:contrato": "cypress run --spec \"cypress/e2e/webservices/registro_contrato_webservice.cy.js\""
   },
   "repository": {
     "type": "git",

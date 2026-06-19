@@ -43,17 +43,22 @@ As credenciais devem ser informadas por variaveis de ambiente no arquivo `.env`.
 cypress/
   actions/
     contratoActions.js
+  config/
+    detransConfig.js
   e2e/
-    cadastro_cnpj_alfanumerico.cy.js
-    api/
-      webservice/
-        registro_contrato_webservice.cy.js
-    contrato/
+    aditivos/
       alteracao_aditivo.cy.js
+      registro_aditivo.cy.js
+    alteracoes/
       alteracao_contrato.cy.js
+    contratos/
+      cadastro_cnpj_alfanumerico.cy.js
       contrato_novo.cy.js
       contrato_usado.cy.js
-      registro_aditivo.cy.js
+    webservices/
+      registro_contrato_webservice.cy.js
+  factories/
+    massaDadosFactory.js
   fixtures/
     detrans.json
     detransIgnorados.json
@@ -66,6 +71,9 @@ cypress/
     commands.js
     e2e.js
     massaDados.js
+    webserviceContrato.js
+  services/
+    contratoWsService.js
 ```
 
 ## Suites Ativas da Regressao
@@ -74,19 +82,19 @@ As suites abaixo compoem a regressao principal executada por `npm test`:
 
 | Suite | Objetivo |
 | --- | --- |
-| `contrato/contrato_novo.cy.js` | Regressao multiestado para contrato de veiculo novo, com envio e protocolo |
-| `contrato/contrato_usado.cy.js` | Regressao multiestado para contrato de veiculo usado, com envio e protocolo |
-| `cadastro_cnpj_alfanumerico.cy.js` | Cadastro usando CNPJ alfanumerico unico |
+| `contratos/contrato_novo.cy.js` | Regressao multiestado para contrato de veiculo novo, com envio e protocolo |
+| `contratos/contrato_usado.cy.js` | Regressao multiestado para contrato de veiculo usado, com envio e protocolo |
+| `contratos/cadastro_cnpj_alfanumerico.cy.js` | Cadastro usando CNPJ alfanumerico unico |
 
 Specs antigos de login isolado, contrato generico e veiculo novo/usado foram removidos para evitar redundancia.
 
 ## Suites API / Webservice
 
-As suites de API ficam separadas das suites de UI em `cypress/e2e/api/webservice`.
+As suites de API ficam separadas das suites de UI em `cypress/e2e/webservices`.
 
 | Suite | Objetivo |
 | --- | --- |
-| `api/webservice/registro_contrato_webservice.cy.js` | Registro de contrato via endpoint REST para os DETRANs elegiveis |
+| `webservices/registro_contrato_webservice.cy.js` | Registro de contrato via endpoint REST para os DETRANs elegiveis |
 
 A suite de webservice:
 
@@ -168,7 +176,7 @@ npm test -- --env detran=DETRAN-DF
 
 ## CNPJ Alfanumerico
 
-A suite `cadastro_cnpj_alfanumerico.cy.js` valida:
+A suite `contratos/cadastro_cnpj_alfanumerico.cy.js` valida:
 
 - geracao de CNPJ alfanumerico unico por execucao;
 - preenchimento do campo CPF/CNPJ;
@@ -185,7 +193,7 @@ npm run test:cadastro:cnpj
 
 ## Massa de Dados
 
-A massa e gerada em `cypress/support/massaDados.js`.
+A massa e gerada em `cypress/factories/massaDadosFactory.js`.
 
 Caracteristicas:
 
@@ -265,7 +273,7 @@ Screenshots e videos de falha tambem ficam fora do versionamento, conforme `.git
 Para adicionar um novo DETRAN elegivel:
 
 1. Incluir o DETRAN em `cypress/fixtures/detrans.json`.
-2. Garantir que a UF correspondente exista em `cypress/support/massaDados.js`.
+2. Garantir que a UF correspondente exista em `cypress/factories/massaDadosFactory.js`.
 3. Rodar smoke com `npm test -- --env detran=DETRAN-UF`.
 4. Rodar a regressao completa antes de promover a alteracao.
 

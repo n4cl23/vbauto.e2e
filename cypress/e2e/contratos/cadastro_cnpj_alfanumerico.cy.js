@@ -1,20 +1,20 @@
-import contratoActions from "../actions/contratoActions"
-import contratoPage from "../pages/contratoPage"
-import detransIgnorados from "../fixtures/detransIgnorados.json"
-import { gerarCnpjAlfanumerico, gerarVeiculoNovoPorUf } from "../support/massaDados"
+import contratoActions from "../../actions/contratoActions"
+import contratoPage from "../../pages/contratoPage"
+import { obterDetransIgnorados, validarDetranElegivel } from "../../config/detransConfig"
+import { gerarCnpjAlfanumerico, gerarVeiculoNovoPorUf } from "../../factories/massaDadosFactory"
 
 const normalizarDocumento = (valor) => String(valor || '').replace(/[^0-9A-Z]/gi, '').toUpperCase()
 
 describe('Cadastro com CNPJ alfanumerico', () => {
     const detranPrincipal = Cypress.env('detran') || Cypress.env('detranPrincipal') || 'DETRAN-DF'
-    const detransIgnoradosNaSuite = Object.values(detransIgnorados).flat()
+    const detransIgnoradosNaSuite = obterDetransIgnorados()
 
     beforeEach(() => {
         cy.login({ usarSessao: false })
     })
 
     it('permite cadastrar contrato com CNPJ alfanumerico', () => {
-        expect(detransIgnoradosNaSuite, `${detranPrincipal} nao deve exigir WebPKI ou estar indisponivel`).not.to.include(detranPrincipal)
+        validarDetranElegivel(detranPrincipal, detransIgnoradosNaSuite)
 
         const cnpjAlfanumerico = gerarCnpjAlfanumerico()
         const nomeEmpresa = `Empresa Alfa ${Date.now()}`

@@ -1,8 +1,8 @@
 import contratoActions from "../../actions/contratoActions"
-import detransIgnorados from "../../fixtures/detransIgnorados.json"
+import { obterDetransIgnorados, validarDetranElegivel } from "../../config/detransConfig"
 
 const detranPrincipal = Cypress.env('detran') || 'DETRAN-AC'
-const detransIgnoradosNaSuite = Object.values(detransIgnorados).flat()
+const detransIgnoradosNaSuite = obterDetransIgnorados()
 
 describe('Alteracao de contrato', () => {
     beforeEach(() => {
@@ -10,7 +10,7 @@ describe('Alteracao de contrato', () => {
     })
 
     it(`altera contrato finalizado com sucesso para ${detranPrincipal}`, () => {
-        expect(detransIgnoradosNaSuite, `${detranPrincipal} nao deve exigir WebPKI ou estar indisponivel`).not.to.include(detranPrincipal)
+        validarDetranElegivel(detranPrincipal, detransIgnoradosNaSuite)
 
         contratoActions.alterarContratoComProtocolo(detranPrincipal).then(({ protocoloContrato, protocoloAlteracao }) => {
             expect(protocoloContrato, 'protocolo do contrato original').to.match(/\d{4,}/)

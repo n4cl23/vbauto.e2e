@@ -1,11 +1,11 @@
-import detrans from "../../../fixtures/detrans.json"
+import detrans from "../../fixtures/detrans.json"
 import {
     MUNICIPIOS_WS_POR_UF,
     normalizarUf,
     obterDetransIgnoradosWs,
     obterTokenWs,
     registrarContratoWsComRetry
-} from "../../../support/webserviceContrato"
+} from "../../services/contratoWsService"
 
 describe('API Webservice - Registro de contrato', () => {
     const detranFiltro = Cypress.env('detran')

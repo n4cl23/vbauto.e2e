@@ -1,8 +1,8 @@
 import contratoActions from "../../actions/contratoActions"
-import detransIgnorados from "../../fixtures/detransIgnorados.json"
+import { obterDetransIgnorados, validarDetranElegivel } from "../../config/detransConfig"
 
 const detranPrincipal = Cypress.env('detran') || 'DETRAN-AC'
-const detransIgnoradosNaSuite = Object.values(detransIgnorados).flat()
+const detransIgnoradosNaSuite = obterDetransIgnorados()
 
 describe('Registro de aditivo', () => {
     beforeEach(() => {
@@ -10,7 +10,7 @@ describe('Registro de aditivo', () => {
     })
 
     it(`registra novo aditivo a partir de contrato recem-gerado para ${detranPrincipal}`, () => {
-        expect(detransIgnoradosNaSuite, `${detranPrincipal} nao deve exigir WebPKI ou estar indisponivel`).not.to.include(detranPrincipal)
+        validarDetranElegivel(detranPrincipal, detransIgnoradosNaSuite)
 
         contratoActions.registrarContratoNovoComProtocolo(detranPrincipal).then(({ protocolo }) => {
             expect(protocolo, 'protocolo do contrato base').to.match(/\d{4,}/)
